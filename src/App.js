@@ -3,7 +3,7 @@ import { Routes, Route } from 'react-router-dom';
 import Layout from './components/Layout';
 import Home from './pages/Home';
 import CreatePost from './pages/CreatePost';
-import ViewPost from './pages/ViewPost';
+import PostsList from './pages/PostsList';
 
 export default function App() {
   return (
@@ -11,7 +11,8 @@ export default function App() {
       <Route path="/" element={<Layout />}>
         <Route index element={<Home />} />
         <Route path="create" element={<CreatePost />} />
-        <Route path="view/:postId" element={<ViewPost />} />
+        {/* View without postId: inputs ID & PW to list all posts */}
+        <Route path="view" element={<PostsList />} />
       </Route>
     </Routes>
   );
