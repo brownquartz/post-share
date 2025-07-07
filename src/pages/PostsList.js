@@ -14,6 +14,8 @@ export default function PostsList() {
   const [posts, setPosts] = useState([]);
   const [error, setError] = useState('');
 
+  const API_BASE = process.env.REACT_APP_API_BASE
+
   const fetchPosts = async () => {
     if (!accountId.trim() || !password.trim()) {
       setError('Please enter Account ID and Password.');
@@ -22,7 +24,7 @@ export default function PostsList() {
     }
     try {
       const res = await fetch(
-        `/api/posts?accountId=${encodeURIComponent(accountId)}` +
+        `${API_BASE}/posts?accountId=${encodeURIComponent(accountId)}` +
         `&password=${encodeURIComponent(password)}`
       );
       if (!res.ok) throw new Error('Invalid credentials or no posts');

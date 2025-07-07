@@ -23,6 +23,8 @@ export default function CreatePost() {
   const [shareLink, setShareLink] = useState('');
   const [statusMessage, setStatusMessage] = useState('');
 
+  const API_BASE = process.env.REACT_APP_API_BASE
+
   const handleSubmit = async () => {
     if (!title.trim() || !accountId.trim() || !password.trim() || !postContent.trim()) {
       setStatusMessage('Error: All fields are required.');
@@ -33,7 +35,7 @@ export default function CreatePost() {
     const encrypted = CryptoJS.AES.encrypt(postContent, key).toString();
 
     try {
-      const res = await fetch('/api/posts', {
+      const res = await fetch(`${API_BASE}/posts`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
