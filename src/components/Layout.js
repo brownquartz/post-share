@@ -15,7 +15,7 @@ export default function Layout() {
         <Outlet />
       </main>
       <footer className="bg-gray-200 text-center p-2 text-sm">
-        &copy; 2025 Post Share v.0.01
+        &copy; 2025 Post Share v.${Date.now()}
       </footer>
     </div>
   );
