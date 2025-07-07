@@ -35,7 +35,7 @@ export default function CreatePost() {
     const encrypted = CryptoJS.AES.encrypt(postContent, key).toString();
 
     try {
-      const res = await fetch(`${API_BASE}/posts`, {
+      const res = await fetch(`${API_BASE}/api/posts`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

@@ -20,7 +20,7 @@ export default function ViewPost() {
   const handleView = async () => {
     try {
       const res = await fetch(
-        `${API_BASE}/posts/${postId}` +
+        `${API_BASE}/api/posts/${postId}` +
         `?accountId=${encodeURIComponent(accountId)}` +
         `&password=${encodeURIComponent(password)}`
       );

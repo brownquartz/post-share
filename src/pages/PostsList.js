@@ -24,7 +24,7 @@ export default function PostsList() {
     }
     try {
       const res = await fetch(
-        `${API_BASE}/posts?accountId=${encodeURIComponent(accountId)}` +
+        `${API_BASE}/api/posts?accountId=${encodeURIComponent(accountId)}` +
         `&password=${encodeURIComponent(password)}`
       );
       if (!res.ok) throw new Error('Invalid credentials or no posts');
