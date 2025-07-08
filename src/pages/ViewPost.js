@@ -15,12 +15,12 @@ export default function ViewPost() {
   const [decryptedContent, setDecryptedContent] = useState('');
   const [error, setError] = useState('');
 
-  const API_BASE = process.env.REACT_APP_API_BASE
+  // const API_BASE = process.env.REACT_APP_API_BASE
 
   const handleView = async () => {
     try {
       const res = await fetch(
-        `${API_BASE}/api/posts/${postId}` +
+        `/api/posts/${postId}` +
         `?accountId=${encodeURIComponent(accountId)}` +
         `&password=${encodeURIComponent(password)}`
       );

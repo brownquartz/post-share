@@ -35,8 +35,6 @@ export default function CreatePost() {
     const encrypted = CryptoJS.AES.encrypt(postContent, key).toString();
     // const expiresAtDate = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days from now
 
-    // console.log('expirsesAtDate', expiresAtDate);
-
     try {
       const res = await fetch(`${API_BASE}/api/posts`, {
         method: 'POST',
