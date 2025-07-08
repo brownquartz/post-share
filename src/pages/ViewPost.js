@@ -15,7 +15,23 @@ export default function ViewPost() {
   const [decryptedContent, setDecryptedContent] = useState('');
   const [error, setError] = useState('');
 
-  // const API_BASE = process.env.REACT_APP_API_BASE
+  const API_BASE = process.env.REACT_APP_API_BASE
+  
+  useEffect(() => {
+    // ① まずヘルスチェックでコンテナを起こす
+    fetch(`${API_BASE}/__health`).catch(()=>{}).finally(() => {
+      // ② 少し遅らせて本命を叩く
+      setTimeout(() => {
+        fetch(
+          `${API_BASE}/api/posts` +
+          `?accountId=${accountId}&password=${hashedPassword}`
+        )
+        .then(r => r.json())
+        .then(setPosts)
+        .catch(console.error);
+      }, 3000);
+    });
+  }, []);
 
   const handleView = async () => {
     try {
