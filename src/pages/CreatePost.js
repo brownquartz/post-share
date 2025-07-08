@@ -19,7 +19,7 @@ export default function CreatePost() {
   const [showPassword, setShowPassword] = useState(false);
   const [postContent, setPostContent] = useState('');
   const [postId, setPostId] = useState('');
-  const [expireAt, setExpireAt] = useState('');
+  const [expiresAt, setExpiresAt] = useState('');
   const [shareLink, setShareLink] = useState('');
   const [statusMessage, setStatusMessage] = useState('');
 
@@ -33,6 +33,9 @@ export default function CreatePost() {
     const newPostId = generateRandomId();
     const key = CryptoJS.SHA256(password).toString();
     const encrypted = CryptoJS.AES.encrypt(postContent, key).toString();
+    // const expiresAtDate = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days from now
+
+    // console.log('expirsesAtDate', expiresAtDate);
 
     try {
       const res = await fetch(`${API_BASE}/api/posts`, {
@@ -43,14 +46,15 @@ export default function CreatePost() {
           title,
           accountId,
           password,
-          content: encrypted
+          content: encrypted,
+          // expiresAt: expiresAtDate
         })
       });
       const body = await res.json();
       if (!res.ok) throw new Error(body.error || 'Save failed');
 
       setPostId(newPostId);
-      setExpireAt(body.expireAt);
+      setExpiresAt(new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toLocaleString());
       const link = `${window.location.origin}${process.env.PUBLIC_URL}/view`;
       setShareLink(link);
       setStatusMessage('Post saved successfully!');
@@ -155,9 +159,13 @@ export default function CreatePost() {
           {/* <p>
             <strong>Post ID:</strong> {postId}
           </p> */}
-          <p>
-            <strong>Expires at:</strong> {new Date(expireAt).toLocaleString()}
-          </p>
+          { expiresAt && (
+            <p>
+              <strong>
+                Expires at: {expiresAt}
+              </strong>
+            </p>
+          )}
         </div>
       )}
 

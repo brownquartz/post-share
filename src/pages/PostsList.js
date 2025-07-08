@@ -1,4 +1,3 @@
-// src/pages/PostsList.js
 import { useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import CryptoJS from 'crypto-js';
@@ -14,22 +13,24 @@ export default function PostsList() {
   const [posts, setPosts] = useState([]);
   const [error, setError] = useState('');
 
-  const API_BASE = process.env.REACT_APP_API_BASE
+  const API_BASE = process.env.REACT_APP_API_BASE || '';
 
   const fetchPosts = async () => {
+    console.log(process.env.REACT_APP_API_BASE)
     if (!accountId.trim() || !password.trim()) {
       setError('Please enter Account ID and Password.');
       setPosts([]);
       return;
     }
+
     try {
-      const res = await fetch(
-        `${API_BASE}/api/posts?accountId=${encodeURIComponent(accountId)}` +
-        `&password=${encodeURIComponent(password)}`
-      );
+      const url = `${API_BASE}/api/posts?accountId=${encodeURIComponent(accountId)}` +
+                  `&password=${encodeURIComponent(password)}`;
+      const res = await fetch(url, { method: 'GET' });
       if (!res.ok) throw new Error('Invalid credentials or no posts');
       const data = await res.json();
-      setPosts(data);
+      // Ensure we have an array
+      setPosts(Array.isArray(data) ? data : []);
       setError('');
     } catch (err) {
       setError(err.message);
@@ -38,9 +39,13 @@ export default function PostsList() {
   };
 
   const decrypt = (encrypted) => {
-    const key = CryptoJS.SHA256(password).toString();
-    const bytes = CryptoJS.AES.decrypt(encrypted, key);
-    return bytes.toString(CryptoJS.enc.Utf8);
+    try {
+      const key = CryptoJS.SHA256(password).toString();
+      const bytes = CryptoJS.AES.decrypt(encrypted, key);
+      return bytes.toString(CryptoJS.enc.Utf8);
+    } catch {
+      return 'Decryption failed';
+    }
   };
 
   return (
@@ -78,7 +83,7 @@ export default function PostsList() {
             <div className="flex items-center mb-2">
               <span className="text-lg font-semibold">{post.title}</span>
               <span className="ml-auto text-sm text-gray-500">
-                Expires: {new Date(post.expire_at).toLocaleString()}
+                Expires: {new Date(post.expiresAt).toLocaleString()}
               </span>
             </div>
             <div
@@ -87,6 +92,7 @@ export default function PostsList() {
             />
           </div>
         ))}
+        {posts.length === 0 && !error && <p>No posts to display.</p>}
       </div>
     </div>
   );
