@@ -1,6 +1,5 @@
 
 {
-  "_railway.json" : "",
-  "buildCommand": "npm ci && npm run build && cd backend && npm ci",
+  "buildCommand": "npm ci && npm run build && cd backend && npm ci --no-cache",
   "startCommand": "cd backend && npm start"
 }
