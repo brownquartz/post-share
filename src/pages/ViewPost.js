@@ -1,72 +1,63 @@
 // src/pages/ViewPost.js
 import { useState } from 'react';
-import { useParams, useLocation } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 import CryptoJS from 'crypto-js';
-
-function useQuery() {
-  return new URLSearchParams(useLocation().search);
-}
 
 export default function ViewPost() {
   const { postId } = useParams();
-  const query      = useQuery();
-  const [accountId] = useState(query.get('accountId') || '');
-  const [password, setPassword] = useState(query.get('password') || '');
-  const [decryptedContent, setDecryptedContent] = useState('');
-  const [error, setError] = useState('');
+  const [accountId, setAccountId] = useState('');
+  const [password, setPassword]   = useState('');
+  const [content, setContent]     = useState('');
+  const [error, setError]         = useState('');
 
-  const API_BASE = process.env.REACT_APP_API_BASE
-  
-  useEffect(() => {
-    // ① まずヘルスチェックでコンテナを起こす
-    fetch(`${API_BASE}/__health`).catch(()=>{}).finally(() => {
-      // ② 少し遅らせて本命を叩く
-      setTimeout(() => {
-        fetch(
-          `${API_BASE}/api/posts` +
-          `?accountId=${accountId}&password=${hashedPassword}`
-        )
-        .then(r => r.json())
-        .then(setPosts)
-        .catch(console.error);
-      }, 3000);
-    });
-  }, []);
+  const API_BASE = process.env.REACT_APP_API_BASE;
 
   const handleView = async () => {
     try {
+      // ① パスワードを SHA256 でハッシュ化
+      const hashedPassword = CryptoJS.SHA256(password).toString();
+
+      // ② 認証情報付きで投稿一覧を取得
       const res = await fetch(
-        `/api/posts/${postId}` +
-        `?accountId=${encodeURIComponent(accountId)}` +
-        `&password=${encodeURIComponent(password)}`
+        `${API_BASE}/api/posts?accountId=${encodeURIComponent(accountId)}` +
+        `&password=${encodeURIComponent(hashedPassword)}`
       );
-      if (!res.ok) throw new Error('Invalid ID or password');
-      const { content: encrypted } = await res.json();
-      const key = CryptoJS.SHA256(password).toString();
-      const bytes = CryptoJS.AES.decrypt(encrypted, key);
-      const html = bytes.toString(CryptoJS.enc.Utf8);
-      setDecryptedContent(html);
+      if (!res.ok) throw new Error('認証に失敗しました');
+
+      const posts = await res.json();
+      // ③ postId に合致するものを探す
+      const post = posts.find(p => String(p.id) === postId);
+      if (!post) throw new Error('投稿が見つかりません');
+
+      // ④ AES で復号
+      const bytes = CryptoJS.AES.decrypt(post.content, hashedPassword);
+      const decrypted = bytes.toString(CryptoJS.enc.Utf8);
+      setContent(decrypted);
       setError('');
-    } catch (err) {
-      setError(err.message);
-      setDecryptedContent('');
+    } catch (e) {
+      setError(e.message);
+      setContent('');
     }
   };
 
   return (
     <div>
-      <h1>View Post: {postId}</h1>
+      <h1>View Post #{postId}</h1>
 
       <div>
-        <label>Account ID (from URL):</label>
-        <input type="text" value={accountId} readOnly className="border p-1" />
+        <label>Account ID:</label>
+        <input
+          type="text"
+          value={accountId}
+          onChange={e => setAccountId(e.target.value)}
+          className="border p-1"
+        />
       </div>
 
       <div>
         <label>Password:</label>
         <input
           type="password"
-          placeholder="Password"
           value={password}
           onChange={e => setPassword(e.target.value)}
           className="border p-1"
@@ -78,9 +69,8 @@ export default function ViewPost() {
       </button>
 
       {error && <p className="text-red-600 mt-2">{error}</p>}
-
-      {decryptedContent && (
-        <div className="mt-4 prose" dangerouslySetInnerHTML={{ __html: decryptedContent }} />
+      {content && (
+        <div className="mt-4 prose" dangerouslySetInnerHTML={{ __html: content }} />
       )}
     </div>
   );
