@@ -9,6 +9,7 @@ export default function Layout() {
         <div className="space-x-4">
           <Link to="/">Home</Link>
           <Link to="/create">Create</Link>
+          <Link to="/view">View</Link>
         </div>
       </nav>
       <main className="flex-1 p-6">

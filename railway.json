@@ -1,0 +1,6 @@
+
+{
+  "_railway.json" : "",
+  "buildCommand": "npm ci && npm run build && cd backend && npm ci",
+  "startCommand": "cd backend && npm start"
+}
