@@ -1,10 +1,10 @@
 {
   "files": {
-    "main.js": "/post-share/static/js/main.1ad31e9f.js",
+    "main.js": "/post-share/static/js/main.be0c3808.js",
     "index.html": "/post-share/index.html",
-    "main.1ad31e9f.js.map": "/post-share/static/js/main.1ad31e9f.js.map"
+    "main.be0c3808.js.map": "/post-share/static/js/main.be0c3808.js.map"
   },
   "entrypoints": [
-    "static/js/main.1ad31e9f.js"
+    "static/js/main.be0c3808.js"
   ]
 }
