@@ -19,11 +19,11 @@ export default function Layout({ children }) {
               <Link href="/create">
                 <a className="hover:underline">Create</a>
               </Link>
-              <Link href="/view">
-                <a className="hover:underline">View</a>
-              </Link>
             </>
           )}
+          <Link href="/view">
+            <a className="hover:underline">View</a>
+          </Link>
           {!userId ? (
             <Link href="/auth/login">
               <a className="px-4 py-2 bg-white text-blue-600 rounded hover:bg-gray-100">Login</a>
@@ -44,7 +44,7 @@ export default function Layout({ children }) {
       </main>
 
       <footer className="bg-gray-200 text-center p-2 text-sm">
-        &copy; 2025 Post Share v0.03
+        &copy; 2025 Post Share v0.0101
       </footer>
     </div>
   );
