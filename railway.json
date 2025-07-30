@@ -1,5 +1,0 @@
-
-{
-  "buildCommand": "npm ci --cache /tmp/npm-cache",
-  "startCommand": "node backend/server.js"
-}
