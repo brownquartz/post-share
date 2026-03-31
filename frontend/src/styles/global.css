@@ -1,0 +1,53 @@
+/* styles/globals.css */
+@import "tailwindcss";
+@import "react-quill/dist/quill.snow.css";  /* ← Quill のテーマCSSを読み込む */
+
+@theme {
+  --color-brand:      #14c1f5; /* base */
+  --color-brand-600:  #12b8e8; /* hover */
+  --color-brand-700:  #10a8d9; /* active */
+}
+
+@layer utilities {
+  .header-bar {
+    @apply bg-blue-700 text-white border-b border-white;
+  }
+  .brand-link {
+    @apply font-bold text-white hover:text-white/90;
+  }
+  .btn-solid-light {
+    @apply bg-white text-blue-700 hover:opacity-90 active:opacity-80;
+  }
+  .clickable { @apply cursor-pointer; }
+
+  .btn { @apply inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold select-none; }
+
+  /* フォーカスリングは共通 */
+  .focus-ring { @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/80; }
+
+  /* “塗り”ボタン（ブランド色） */
+  .btn-solid-brand {
+    @apply bg-brand text-white shadow-sm;
+    @apply hover:bg-brand-600 active:bg-brand-700;
+    @apply transition-colors;
+  }
+
+  /* 白枠ボタン（青ヘッダー上でLogin用など） */
+  .btn-outline-light {
+    @apply border-2 border-white text-white hover:bg-white/10 active:bg-white/20;
+    @apply transition-colors;
+  }
+
+  /* ふわっと浮くアニメーション（どのボタンにも併用可） */
+  .hover-lift {
+    @apply transition-transform duration-150 ease-out will-change-transform;
+    @apply hover:-translate-y-0.5 hover:shadow-md active:translate-y-0 active:shadow-sm;
+  }
+}
+
+/* Quill の高さ/クリック領域を明示 */
+.rich-quill .ql-container { min-height: 16rem; }
+.rich-quill .ql-editor    { min-height: 16rem; }
+
+/* （任意）親が transform を持つ場合のIME不具合を避けるなら */
+.rich-quill { will-change: auto; }

@@ -1,0 +1,14 @@
+/* src/styles.css */
+@import "tailwindcss";
+
+/* デザイン・トークンのカスタマイズ例 */
+@theme {
+  --font-sans: "Inter", sans-serif;
+  --breakpoint-lg: 1024px;
+}
+
+@layer utilities {
+  .btn {
+    @apply px-4 py-2 rounded;
+  }
+}
