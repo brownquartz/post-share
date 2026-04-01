@@ -4,8 +4,8 @@ const { toSha256Hex } = require("./hash");
 function bool(v) { return !!v; }
 
 function getFlags(req, post, opts = {}) {
-  const userId = req.user ? Number(req.user.uid) : null;
-  const isOwner = userId != null && Number(post.owner_user_id) === userId;
+  const userId = req.user ? Number(req.user.id ?? req.user.uid) : null;
+  const isOwner = userId != null && !Number.isNaN(userId) && Number(post.owner_user_id) === userId;
 
   const postIdQ   = pickPostId(opts, post);
   const hashQ     = pickPasswordHex(opts, post);

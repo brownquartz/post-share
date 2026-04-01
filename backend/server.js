@@ -21,16 +21,6 @@ const port = process.env.PORT || 4000;
 console.log("▶ ENV PORT =", port);
 console.log("▶ ENV DATABASE_URL =", process.env.DATABASE_URL);
 
-app.use(attachAuthOptional);
-
-// --- Logger (very simple) ---
-app.use((req, _res, next) => {
-  if (req.method === 'POST' && req.path === '/api/posts') {
-    console.log('[POST /api/posts] cookie?', !!req.cookies?.token, 'user=', req.user);
-  }
-  next();
-});
-
 // --- CORS (credentials 対応) ---
 const allowedOrigins = [
   "http://localhost:3000",
@@ -59,20 +49,11 @@ app.options("*", cors(corsOptions)); // preflight
 
 app.use(cookieParser());
 
-
-app.use((req, _res, next) => {
-  if (req.path.startsWith('/api/')) {
-    console.log('[api]', req.method, req.originalUrl, 'cookie?', !!req.cookies?.token);
-  }
-  next();
-});
-
-
-// --- Body parsers (cors の後、router の前) ---
+// --- Body parsers ---
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// 全リクエストに対して req.user を付与
+// cookieParser の後に呼ぶことで Cookie が正しく読める
 app.use(attachAuthOptional);
 
 // --- Health / Test ---
