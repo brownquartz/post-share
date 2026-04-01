@@ -11,22 +11,17 @@ import { useFavoriteStatus } from '../../hooks/useFavoriteStatus';
 export default function PostDetail() {
   const { user } = useAuth();
   const router = useRouter();
-  const { id, aid } = router.query; // id = posts.id (PK), aid = postId (text)
+  const { id, aid } = router.query;
 
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
-  const [postViewPolicy, setPostViewPolicy] = useState(null); // "public_password" | "owner" | ...
-
+  const [postViewPolicy, setPostViewPolicy] = useState(null);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
-
   const [canEdit, setCanEdit] = useState(false);
   const [canDelete, setCanDelete] = useState(false);
   const [canComment, setCanComment] = useState(true);
-
   const [deleting, setDeleting] = useState(false);
-
-  // comments
   const [comments, setComments] = useState([]);
   const [commentsLoading, setCommentsLoading] = useState(false);
   const [commentText, setCommentText] = useState("");
@@ -34,30 +29,22 @@ export default function PostDetail() {
   const [commentSubmitting, setCommentSubmitting] = useState(false);
   const [commentError, setCommentError] = useState("");
 
-  // ---- Favorite state ----
   const postPkId = useMemo(() => (id ? Number(id) : null), [id]);
   const { favorited, setByToggle } = useFavoriteStatus(postPkId);
 
-  // stored hash from list page
-  // new key first: view:post:<postId>  → fallback to legacy: view:<postId>
   const hashedPassword = useMemo(() => {
     if (typeof window === "undefined" || !aid) return "";
-    return (
-      sessionStorage.getItem(`view:post:${aid}`) ||
-      sessionStorage.getItem(`view:${aid}`) ||
-      ""
-    );
+    return sessionStorage.getItem(`view:post:${aid}`) || sessionStorage.getItem(`view:${aid}`) || "";
   }, [aid]);
 
   const postId = useMemo(() => (aid ? String(aid).trim() : ""), [aid]);
 
-  // attach new + legacy params for Phase A compatibility
   const buildAuthQS = useCallback(() => {
     const qs = new URLSearchParams();
     if (postId && hashedPassword) {
       qs.set("postId", postId);
-      qs.set("postPassword", hashedPassword); // new
-      qs.set("password", hashedPassword);     // legacy (Phase A)
+      qs.set("postPassword", hashedPassword);
+      qs.set("password", hashedPassword);
     }
     return qs;
   }, [postId, hashedPassword]);
@@ -65,78 +52,8 @@ export default function PostDetail() {
   useEffect(() => {
     if (!id || !aid) return;
 
-    async function load() {
-      setError("");
-      setLoading(true);
-      setContent("");
-      setTitle("");
-      try {
-        // fetch detail (server computes canEdit/canDelete/canComment)
-        const qs = buildAuthQS().toString();
-        const url = `${API_BASE}/api/posts/${id}${qs ? `?${qs}` : ""}`;
-        const res = await fetch(url, { credentials: "include" });
-
-        if (res.status === 401) {
-          setError("認証に失敗しました");
-          setContent("");
-          return;
-        }
-        if (!res.ok) {
-          setError(`HTTP ${res.status}`);
-          setContent("");
-          return;
-        }
-
-        const post = await res.json();
-        const isEncrypted = post.viewPolicy === "public_password";
-
-        setTitle(post.title || `(No title #${id})`);
-        setPostViewPolicy(post.viewPolicy || null);
-
-        // content: decrypt only when public_password; others are plain text
-        if (isEncrypted) {
-          if (!hashedPassword) {
-            setError("認証情報がありません（一覧から入り直してください）");
-            setContent("");
-          } else {
-            const bytes = CryptoJS.AES.decrypt(post.content, hashedPassword);
-            const html = bytes.toString(CryptoJS.enc.Utf8);
-            if (!html) {
-              setError("復号に失敗しました（パスワードを確認）");
-              setContent("");
-            } else {
-              setContent(html);
-            }
-          }
-        } else {
-          // owner / locked / public_open / friends → plain text from server (server already enforces canView)
-          setContent(post.content || "");
-        }
-
-        // permission flags (fallbacks)
-        const ownerUserId = post.ownerUserId ?? post.userId;
-        const isOwner = !!user && ownerUserId != null && Number(user.id) === Number(ownerUserId);
-        const isAnyoneAuthed =
-          post.editPolicy === "anyone" && !!postId && !!hashedPassword && String(post.postId) === String(postId);
-
-        setCanEdit(post.canEdit ?? (isOwner || isAnyoneAuthed));
-        setCanDelete(post.canDelete ?? post.canEdit ?? (isOwner || isAnyoneAuthed));
-        setCanComment(post.canComment ?? true);
-
-        // comments
-        await loadComments();
-      } catch (e) {
-        setError(e?.message || "Error");
-        setContent("");
-        setTitle("");
-      } finally {
-        setLoading(false);
-      }
-    }
-
     async function loadComments() {
-      setCommentsLoading(true);
-      setCommentError("");
+      setCommentsLoading(true); setCommentError("");
       try {
         const qs = buildAuthQS().toString();
         const url = `${API_BASE}/api/posts/${id}/comments${qs ? `?${qs}` : ""}`;
@@ -145,22 +62,48 @@ export default function PostDetail() {
         if (!res.ok) { setCommentError(`コメント取得エラー (${res.status})`); return; }
         const list = await res.json();
         setComments(Array.isArray(list) ? list : []);
-      } catch (e) {
-        setCommentError(e?.message || "コメント取得エラー");
-      } finally {
-        setCommentsLoading(false);
-      }
+      } catch (e) { setCommentError(e?.message || "コメント取得エラー"); }
+      finally { setCommentsLoading(false); }
+    }
+
+    async function load() {
+      setError(""); setLoading(true); setContent(""); setTitle("");
+      try {
+        const qs = buildAuthQS().toString();
+        const url = `${API_BASE}/api/posts/${id}${qs ? `?${qs}` : ""}`;
+        const res = await fetch(url, { credentials: "include" });
+        if (res.status === 401) { setError("認証に失敗しました"); setContent(""); return; }
+        if (!res.ok) { setError(`HTTP ${res.status}`); setContent(""); return; }
+        const post = await res.json();
+        const isEncrypted = post.viewPolicy === "public_password";
+        setTitle(post.title || `(No title #${id})`);
+        setPostViewPolicy(post.viewPolicy || null);
+        if (isEncrypted) {
+          if (!hashedPassword) { setError("認証情報がありません（一覧から入り直してください）"); setContent(""); }
+          else {
+            const bytes = CryptoJS.AES.decrypt(post.content, hashedPassword);
+            const html = bytes.toString(CryptoJS.enc.Utf8);
+            if (!html) { setError("復号に失敗しました（パスワードを確認）"); setContent(""); }
+            else { setContent(html); }
+          }
+        } else { setContent(post.content || ""); }
+        const ownerUserId = post.ownerUserId ?? post.userId;
+        const isOwner = !!user && ownerUserId != null && Number(user.id) === Number(ownerUserId);
+        const isAnyoneAuthed = post.editPolicy === "anyone" && !!postId && !!hashedPassword && String(post.postId) === String(postId);
+        setCanEdit(post.canEdit ?? (isOwner || isAnyoneAuthed));
+        setCanDelete(post.canDelete ?? post.canEdit ?? (isOwner || isAnyoneAuthed));
+        setCanComment(post.canComment ?? true);
+        await loadComments();
+      } catch (e) { setError(e?.message || "Error"); setContent(""); setTitle(""); }
+      finally { setLoading(false); }
     }
 
     load();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id, aid, user, hashedPassword, buildAuthQS]);
 
-  // logout guard: when viewing owner-only and user becomes null, clear and go back to list
   useEffect(() => {
     if (postViewPolicy === "owner" && !user) {
-      setContent("");
-      setError("ログアウトしたため表示できません");
+      setContent(""); setError("ログアウトしたため表示できません");
       router.replace("/posts/view-all");
     }
   }, [postViewPolicy, user, router]);
@@ -168,168 +111,92 @@ export default function PostDetail() {
   async function handleDelete() {
     if (!id) return alert("Invalid post id");
     if (!confirm("Delete this post?")) return;
-
     const qs = buildAuthQS().toString();
     const url = `${API_BASE}/api/posts/${id}${qs ? `?${qs}` : ""}`;
-
     try {
       setDeleting(true);
       const res = await fetch(url, { method: "DELETE", credentials: "include" });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.message || `Delete failed (${res.status})`);
       router.push("/posts/view-all");
-    } catch (err) {
-      alert(err.message || "Delete failed");
-    } finally {
-      setDeleting(false);
-    }
+    } catch (err) { alert(err.message || "Delete failed"); }
+    finally { setDeleting(false); }
   }
 
   async function handleSubmitComment(e) {
     e.preventDefault?.();
     if (!commentText.trim()) return;
-    setCommentSubmitting(true);
-    setCommentError("");
+    setCommentSubmitting(true); setCommentError("");
     try {
       const qs = buildAuthQS().toString();
       const url = `${API_BASE}/api/posts/${id}/comments${qs ? `?${qs}` : ""}`;
-      const res = await fetch(url, {
-        method: "POST",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          content: commentText,
-          name: commentName || undefined,
-        }),
-      });
+      const res = await fetch(url, { method: "POST", credentials: "include", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ content: commentText, name: commentName || undefined }) });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.message || `Comment failed (${res.status})`);
-      // refresh comments
       setCommentText("");
       try {
-        const res2 = await fetch(
-          `${API_BASE}/api/posts/${id}/comments${qs ? `?${qs}` : ""}`,
-          { credentials: "include" }
-        );
+        const res2 = await fetch(`${API_BASE}/api/posts/${id}/comments${qs ? `?${qs}` : ""}`, { credentials: "include" });
         const list = await res2.json().catch(() => []);
         setComments(Array.isArray(list) ? list : []);
       } catch {}
-    } catch (e) {
-      setCommentError(e?.message || "コメント投稿に失敗しました");
-    } finally {
-      setCommentSubmitting(false);
-    }
+    } catch (e) { setCommentError(e?.message || "コメント投稿に失敗しました"); }
+    finally { setCommentSubmitting(false); }
   }
 
   return (
-    <main className="max-w-3xl mx-auto px-4 py-8">
-      <div className="flex items-center justify-between gap-3">
-        <div className="min-w-0">
-          <h1 className="text-2xl font-bold flex-1">{title || `Post #${id}`}</h1>
-        </div>
-        {user && postPkId ? (
-          <FavoriteButton
-            postPkId={postPkId}
-            initialFavorited={favorited}
-            onChanged={setByToggle}
-          />
-        ) : null}
-        <div className="flex gap-2 shrink-0 ml-4">
+    <main className="page-wrap">
+      <div className="flex items-center justify-between gap-3 flex-wrap">
+        <h1 className="text-2xl font-bold text-primary flex-1 min-w-0 truncate">{title || `Post #${id}`}</h1>
+        <div className="flex items-center gap-2 shrink-0">
+          {user && postPkId ? (
+            <FavoriteButton postPkId={postPkId} initialFavorited={favorited} onChanged={setByToggle} />
+          ) : null}
           {canEdit && (
-            <Link
-              href={`/posts/${id}/edit?aid=${encodeURIComponent(postId)}`}
-              className="inline-flex items-center gap-1 rounded-xl border
-                      border-slate-300 bg-white px-3 py-1.5 text-sm font-medium
-                      text-slate-700 hover:bg-slate-50 active:scale-[.98]
-                        transition cursor-pointer"
-            >
-              Edit
-            </Link>
+            <Link href={`/posts/${id}/edit?aid=${encodeURIComponent(postId)}`} className="btn-ghost btn-sm">Edit</Link>
           )}
           {canDelete && (
-            <button
-              type="button"
-              onClick={handleDelete}
-              disabled={deleting}
-              className="inline-flex items-center gap-1 rounded-xl border
-                        border-red-500 bg-white px-3 py-1.5 text-sm font-medium
-                        text-red-600 hover:bg-red-50 active:scale-[.98]
-                          transition disabled:opacity-60 cursor-pointer"
-            >
-              {deleting ? "Deleting..." : "Delete"}
+            <button type="button" onClick={handleDelete} disabled={deleting} className="btn btn-danger hover-lift focus-ring btn-sm disabled:opacity-60">
+              {deleting ? "Deleting…" : "Delete"}
             </button>
           )}
-          <Link
-            href="/posts/view-all"
-            className="inline-flex items-center gap-1 rounded-xl border
-                       border-slate-300 bg-white px-3 py-1.5 text-sm font-medium
-                       text-slate-700 hover:bg-slate-50 active:scale-[.98]
-                       transition cursor-pointer"
-          >
-            Back
-          </Link>
+          <Link href="/posts/view-all" className="btn-ghost btn-sm">Back</Link>
         </div>
       </div>
 
-      {loading && <p className="mt-6 text-slate-600">Loading...</p>}
-      {error && <p className="mt-6 text-red-600">{error}</p>}
+      {loading && <p className="mt-6 text-secondary text-sm">Loading…</p>}
+      {error   && <p className="mt-6 text-error">{error}</p>}
 
-      {content && (
-        <article className="mt-6 prose" dangerouslySetInnerHTML={{ __html: content }} />
-      )}
+      {content && <article className="mt-6 prose dark:prose-invert max-w-none" dangerouslySetInnerHTML={{ __html: content }} />}
 
-      {/* ----- Comments ----- */}
       <section id="comments" className="mt-10">
-        <h2 className="text-lg font-semibold mb-3">Comments</h2>
-
+        <h2 className="text-lg font-semibold text-primary mb-3">Comments</h2>
         {commentsLoading ? (
-          <p className="text-slate-600">Loading comments…</p>
+          <p className="text-secondary text-sm">Loading comments…</p>
         ) : commentError ? (
-          <p className="text-red-600">{commentError}</p>
+          <p className="text-error">{commentError}</p>
         ) : (
           <ul className="space-y-3">
-            {comments.length === 0 && (
-              <li className="text-slate-600 text-sm">No comments yet.</li>
-            )}
+            {comments.length === 0 && <li className="text-secondary text-sm">No comments yet.</li>}
             {comments.map((c) => (
-              <li key={c.id} className="rounded-xl border p-3 bg-white">
+              <li key={c.id} className="card p-3">
                 <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium">{c.name || "Anonymous"}</span>
-                  <span className="text-xs text-slate-500">
-                    {c.createdAt ? new Date(c.createdAt).toLocaleString() : ""}
-                  </span>
+                  <span className="text-sm font-medium text-primary">{c.name || "Anonymous"}</span>
+                  <span className="text-xs text-muted">{c.createdAt ? new Date(c.createdAt).toLocaleString() : ""}</span>
                 </div>
-                <p className="mt-1 text-slate-700 text-sm whitespace-pre-wrap">{c.content}</p>
+                <p className="mt-1 text-secondary text-sm whitespace-pre-wrap">{c.content}</p>
               </li>
             ))}
           </ul>
         )}
-
         {canComment && (
           <form onSubmit={handleSubmitComment} className="mt-4 space-y-2">
-            <div className="flex items-center gap-2 text-xs text-slate-600">
-              <label className="flex items-center gap-2">
-                <span>Display name</span>
-                <input
-                  className="rounded-lg border px-2 py-1"
-                  value={commentName}
-                  onChange={(e) => setCommentName(e.target.value)}
-                  placeholder="Anonymous"
-                />
-              </label>
-            </div>
+            <label className="flex items-center gap-2 text-xs text-secondary">
+              <span>Display name</span>
+              <input className="input !py-1 !px-2 w-32" value={commentName} onChange={(e) => setCommentName(e.target.value)} placeholder="Anonymous" />
+            </label>
             <div className="flex gap-2">
-              <input
-                className="flex-1 rounded-lg border px-3 py-2 text-sm"
-                placeholder="Add a comment…"
-                value={commentText}
-                onChange={(e) => setCommentText(e.target.value)}
-              />
-              <button
-                type="submit"
-                className="btn btn-solid-brand hover-lift focus-ring"
-                disabled={commentSubmitting}
-              >
+              <input className="input flex-1" placeholder="Add a comment…" value={commentText} onChange={(e) => setCommentText(e.target.value)} />
+              <button type="submit" className="btn-primary" disabled={commentSubmitting}>
                 {commentSubmitting ? "Posting…" : "Post"}
               </button>
             </div>

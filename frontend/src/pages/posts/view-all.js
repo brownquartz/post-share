@@ -35,30 +35,26 @@ function FavoriteButton({ postPkId, initialFavorited, onChanged }) {
     try {
       if (!favorited) {
         await api('/api/favorites', { method: 'POST', body: JSON.stringify({ postId: postPkId }) });
-        setFavorited(true);
-        onChanged?.(true);
+        setFavorited(true); onChanged?.(true);
       } else {
         await api(`/api/favorites/${postPkId}`, { method: 'DELETE' });
-        setFavorited(false);
-        onChanged?.(false);
+        setFavorited(false); onChanged?.(false);
       }
-    } catch (e) {
-      alert(e.message);
-    } finally {
-      setBusy(false);
-    }
+    } catch (e) { alert(e.message); }
+    finally { setBusy(false); }
   };
 
   return (
     <button
-      onClick={toggle}
-      disabled={busy}
-      className={`inline-flex items-center gap-1 rounded-2xl px-3 py-1 border text-sm
-        ${favorited ? 'border-yellow-500' : 'border-gray-400'}`}
+      onClick={toggle} disabled={busy}
+      className={`btn btn-xs focus-ring ${
+        favorited
+          ? 'border border-yellow-500/70 text-yellow-400 hover:bg-yellow-500/10'
+          : 'btn-secondary'
+      }`}
       title={favorited ? 'Unfavorite' : 'Favorite'}
     >
-      <span>{favorited ? '★' : '☆'}</span>
-      <span>{favorited ? 'Favorited' : 'Favorite'}</span>
+      {favorited ? '★ Favorited' : '☆ Favorite'}
     </button>
   );
 }
@@ -68,33 +64,29 @@ function PostCard({ item, onFavoriteChanged }) {
   const isLocked = !item.canView;
 
   const handleUnlock = async () => {
-    const plain = prompt('Enter password for this post (will be hashed and stored locally):');
+    const plain = prompt('Enter password for this post:');
     if (!plain) return;
     const hex = await sha256Hex(plain);
-    sessionStorage.setItem(`view:post:${item.postId}`, hex); // new key
-    sessionStorage.setItem(`view:${item.postId}`, hex);      // old key (compat)
-    router.push(`/posts/${item.id}?postId=${encodeURIComponent(item.postId)}`);
+    sessionStorage.setItem(`view:post:${item.postId}`, hex);
+    sessionStorage.setItem(`view:${item.postId}`, hex);
+    router.push(`/posts/${item.id}?aid=${encodeURIComponent(item.postId)}`);
   };
 
   return (
-    <div className="rounded-2xl border p-4 flex items-center justify-between gap-4">
+    <div className="card p-4 flex items-center justify-between gap-4">
       <div className="min-w-0">
-        <div className="text-sm text-gray-500">{item.postId}</div>
-        <div className="text-lg font-semibold truncate">{item.title || '(no title)'}</div>
-        <div className="text-xs text-gray-500 mt-1">
-          {item.viewPolicy} ・ {new Date(item.createdAt).toLocaleString()}
+        <div className="text-xs text-muted">{item.postId}</div>
+        <div className="font-semibold text-primary truncate">{item.title || '(no title)'}</div>
+        <div className="text-xs text-secondary mt-0.5">
+          {item.viewPolicy} · {new Date(item.createdAt).toLocaleString()}
         </div>
       </div>
       <div className="flex items-center gap-2 shrink-0">
-        <FavoriteButton
-          postPkId={item.id}
-          initialFavorited={item.isFavorited}
-          onChanged={onFavoriteChanged}
-        />
+        <FavoriteButton postPkId={item.id} initialFavorited={item.isFavorited} onChanged={onFavoriteChanged} />
         {isLocked ? (
-          <button onClick={handleUnlock} className="rounded-xl border px-3 py-1 text-sm">Unlock</button>
+          <button onClick={handleUnlock} className="btn-ghost btn-xs">Unlock</button>
         ) : (
-          <Link href={`/posts/${item.id}`} className="rounded-xl border px-3 py-1 text-sm">View</Link>
+          <Link href={`/posts/${item.id}?aid=${encodeURIComponent(item.postId)}`} className="btn-primary btn-xs">View</Link>
         )}
       </div>
     </div>
@@ -103,36 +95,31 @@ function PostCard({ item, onFavoriteChanged }) {
 
 export default function ViewAllPostsPage() {
   const { user, authReady } = useAuth();
-  const [tab, setTab] = useState('favorites'); // 'favorites' | 'owner'
+  const [tab, setTab] = useState('favorites');
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(false);
-  const lastFetchKeyRef = useRef(''); // de-dupe key
+  const lastFetchKeyRef = useRef('');
 
   const fetchList = async (nextTab = tab) => {
     setLoading(true);
     try {
       if (nextTab === 'favorites') {
-        if (!user) { setItems([]); return; }           // 未ログインは叩かない
+        if (!user) { setItems([]); return; }
         const data = await api('/api/favorites/mine');
         setItems(data.items || []);
       } else {
-        if (!user) { setItems([]); return; }           // 未ログインは叩かない
-        const data = await api('/api/posts/my?ownerOnly=1'); // posts.js に追加したエンドポイント
+        if (!user) { setItems([]); return; }
+        const data = await api('/api/posts/my?ownerOnly=1');
         setItems(data.items || []);
       }
     } catch (e) {
-     // 401は想定内（未ログイン）。アラートは出さない
-     if (String(e.message).includes('401')) {
-       setItems([]);
-     } else {
-       console.error(e);
-     }
+      if (String(e.message).includes('401')) { setItems([]); }
+      else { console.error(e); }
     } finally {
       setLoading(false);
     }
   };
 
-  // 認証状態が確定してから、かつ同じ条件で二重発火しないようにデドupe
   useEffect(() => {
     if (!authReady) return;
     const key = `${user ? user.id : 'guest'}:${tab}`;
@@ -148,24 +135,25 @@ export default function ViewAllPostsPage() {
   );
 
   return (
-    <div className="mx-auto max-w-3xl p-4 space-y-4">
-      <h1 className="text-2xl font-bold">View all posts</h1>
+    <main className="page-wrap pt-10">
+      <h1 className="page-title">My Posts</h1>
 
-      <div className="flex gap-2">
-        <button
-          onClick={() => setTab('favorites')}
-          className={`rounded-xl px-3 py-1 border ${tab==='favorites' ? 'bg-gray-100' : ''}`}
-        >Favorites</button>
-        <button
-          onClick={() => setTab('owner')}
-          className={`rounded-xl px-3 py-1 border ${tab==='owner' ? 'bg-gray-100' : ''}`}
-        >My Owner-only</button>
+      <div className="flex gap-2 mb-6">
+        {['favorites', 'owner'].map((t) => (
+          <button
+            key={t}
+            onClick={() => setTab(t)}
+            className={`btn focus-ring ${tab === t ? 'btn-solid-brand' : 'btn-secondary'}`}
+          >
+            {t === 'favorites' ? '★ Favorites' : 'Owner-only'}
+          </button>
+        ))}
       </div>
 
       {loading ? (
-        <div className="text-sm text-gray-500">Loading...</div>
+        <p className="text-secondary text-sm">Loading…</p>
       ) : items.length === 0 ? (
-        <div className="text-sm text-gray-500">{emptyText}</div>
+        <p className="text-secondary text-sm">{emptyText}</p>
       ) : (
         <div className="space-y-3">
           {items.map(it => (
@@ -173,6 +161,6 @@ export default function ViewAllPostsPage() {
           ))}
         </div>
       )}
-    </div>
+    </main>
   );
 }

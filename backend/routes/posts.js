@@ -70,6 +70,52 @@ router.get(
   })
 );
 
+// ログインユーザーが owner の投稿一覧
+router.get(
+  "/my",
+  queryCatch("GET /api/posts/my", async (req, res) => {
+    if (!req.user) {
+      return res.status(401).json({ status: "error", message: "Login required" });
+    }
+    const userId = req.user.id;
+    const ownerOnly = req.query.ownerOnly === "1";
+
+    const { rows } = await pool.query(
+      `SELECT p.id, p.title, p.post_id, p.view_policy, p.edit_policy, p.delete_policy,
+              p.owner_user_id, p.created_at AS "createdAt", p.expires_at AS "expiresAt",
+              EXISTS (
+                SELECT 1 FROM favorites f WHERE f.user_id = $1 AND f.post_id = p.id
+              ) AS "isFavorited"
+         FROM posts p
+        WHERE p.owner_user_id = $1
+          AND (p.expires_at IS NULL OR p.expires_at > NOW())
+          ${ownerOnly ? "AND p.view_policy = 'owner'" : ""}
+        ORDER BY p.created_at DESC
+        LIMIT 200`,
+      [userId]
+    );
+
+    const items = rows.map((r) => {
+      const flags = getFlags(req, r, {});
+      return {
+        id: r.id,
+        postId: r.post_id,
+        title: r.title,
+        viewPolicy: r.view_policy,
+        editPolicy: r.edit_policy,
+        createdAt: r.createdAt,
+        expiresAt: r.expiresAt,
+        isFavorited: r.isFavorited,
+        canView: canView(r, flags),
+        canEdit: canEdit(r, flags),
+        canDelete: canDelete(r, flags),
+      };
+    });
+
+    return res.json({ items });
+  })
+);
+
 // 詳細
 router.get(
   "/:id",

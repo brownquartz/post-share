@@ -1,53 +1,142 @@
-/* styles/globals.css */
 @import "tailwindcss";
-@import "react-quill/dist/quill.snow.css";  /* ← Quill のテーマCSSを読み込む */
+
+/* Class-based dark mode for Tailwind v4 */
+@variant dark (.dark &);
 
 @theme {
-  --color-brand:      #14c1f5; /* base */
-  --color-brand-600:  #12b8e8; /* hover */
-  --color-brand-700:  #10a8d9; /* active */
+  --color-brand:     #14c1f5;
+  --color-brand-600: #12b8e8;
+  --color-brand-700: #10a8d9;
 }
 
 @layer utilities {
+  /* ── Page & Card ───────────────────────────────── */
+  .page-bg {
+    @apply bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-gray-100 min-h-screen;
+  }
+  .card {
+    @apply bg-white dark:bg-gray-900
+           border border-gray-200 dark:border-gray-700/60
+           rounded-2xl;
+  }
+  .surface {
+    @apply bg-gray-100 dark:bg-gray-800
+           border border-gray-200 dark:border-gray-700/60
+           rounded-xl;
+  }
+
+  /* ── Typography ────────────────────────────────── */
+  .text-primary   { @apply text-gray-900 dark:text-gray-100; }
+  .text-secondary { @apply text-gray-500 dark:text-gray-400; }
+  .text-muted     { @apply text-gray-400 dark:text-gray-500; }
+
+  /* ── Nav ───────────────────────────────────────── */
   .header-bar {
-    @apply bg-blue-700 text-white border-b border-white;
+    @apply bg-gray-900 dark:bg-gray-950
+           border-b border-gray-700/60
+           text-white;
   }
   .brand-link {
-    @apply font-bold text-white hover:text-white/90;
+    @apply font-bold text-brand hover:text-brand-600 transition-colors;
   }
-  .btn-solid-light {
-    @apply bg-white text-blue-700 hover:opacity-90 active:opacity-80;
+
+  /* ── Inputs ────────────────────────────────────── */
+  .input {
+    @apply w-full rounded-lg border px-3 py-2 text-sm
+           bg-white dark:bg-gray-800
+           border-gray-300 dark:border-gray-600
+           text-gray-900 dark:text-gray-100
+           placeholder:text-gray-400 dark:placeholder:text-gray-500
+           focus:outline-none focus:ring-2 focus:ring-brand/40
+           transition;
   }
-  .clickable { @apply cursor-pointer; }
+  .label {
+    @apply block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300;
+  }
 
-  .btn { @apply inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold select-none; }
-
-  /* フォーカスリングは共通 */
-  .focus-ring { @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/80; }
-
-  /* “塗り”ボタン（ブランド色） */
+  /* ── Buttons ───────────────────────────────────── */
+  .btn {
+    @apply inline-flex items-center justify-center gap-2
+           rounded-xl px-4 py-2 text-sm font-semibold
+           select-none transition cursor-pointer;
+  }
+  .focus-ring {
+    @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/60;
+  }
   .btn-solid-brand {
-    @apply bg-brand text-white shadow-sm;
-    @apply hover:bg-brand-600 active:bg-brand-700;
-    @apply transition-colors;
+    @apply bg-brand text-white shadow-sm
+           hover:bg-brand-600 active:bg-brand-700
+           transition-colors;
   }
-
-  /* 白枠ボタン（青ヘッダー上でLogin用など） */
+  .btn-secondary {
+    @apply border border-gray-300 dark:border-gray-600
+           text-gray-700 dark:text-gray-300
+           hover:bg-gray-100 dark:hover:bg-gray-800
+           active:bg-gray-200 dark:active:bg-gray-700
+           transition-colors;
+  }
+  .btn-danger {
+    @apply border border-red-400 dark:border-red-500/70
+           text-red-600 dark:text-red-400
+           hover:bg-red-50 dark:hover:bg-red-950/40
+           transition-colors;
+  }
   .btn-outline-light {
-    @apply border-2 border-white text-white hover:bg-white/10 active:bg-white/20;
-    @apply transition-colors;
+    @apply border border-gray-600 text-gray-300
+           hover:bg-gray-800 active:bg-gray-700
+           transition-colors;
+  }
+  .hover-lift {
+    @apply transition-transform duration-150 ease-out
+           hover:-translate-y-0.5 hover:shadow-md
+           active:translate-y-0 active:shadow-sm;
   }
 
-  /* ふわっと浮くアニメーション（どのボタンにも併用可） */
-  .hover-lift {
-    @apply transition-transform duration-150 ease-out will-change-transform;
-    @apply hover:-translate-y-0.5 hover:shadow-md active:translate-y-0 active:shadow-sm;
+  /* ── Composite buttons ─────────────────────────── */
+  /* btn-primary / btn-ghost fold in the common hover-lift + focus-ring */
+  .btn-primary { @apply btn btn-solid-brand hover-lift focus-ring; }
+  .btn-ghost   { @apply btn btn-secondary   hover-lift focus-ring; }
+  /* size override — stack after btn-primary / btn-ghost */
+  .btn-sm { @apply text-xs px-3 py-1.5; }
+  .btn-xs { @apply text-xs px-3 py-1; }
+
+  /* ── Page containers ───────────────────────────── */
+  .page-wrap    { @apply max-w-3xl mx-auto px-4 py-8; }
+  .page-wrap-md { @apply max-w-2xl mx-auto px-4 py-10; }
+  .page-wrap-sm { @apply max-w-sm  mx-auto px-4 py-16; }
+
+  /* ── Page title ────────────────────────────────── */
+  .page-title { @apply text-2xl font-bold text-primary mb-6; }
+
+  /* ── Form helpers ──────────────────────────────── */
+  .text-error   { @apply text-sm text-red-500; }
+  .radio-label  { @apply inline-flex items-center gap-2 text-sm text-primary cursor-pointer; }
+  .radio-dim    { @apply inline-flex items-center gap-2 text-sm opacity-40 cursor-not-allowed; }
+
+  /* ── Quill wrapper ─────────────────────────────── */
+  .quill-wrap {
+    @apply border border-gray-300 dark:border-gray-700 rounded-lg overflow-hidden;
   }
 }
 
-/* Quill の高さ/クリック領域を明示 */
+/* ── Quill editor ──────────────────────────────────────── */
 .rich-quill .ql-container { min-height: 16rem; }
 .rich-quill .ql-editor    { min-height: 16rem; }
+.rich-quill               { will-change: auto; }
 
-/* （任意）親が transform を持つ場合のIME不具合を避けるなら */
-.rich-quill { will-change: auto; }
+/* Dark mode Quill overrides */
+.dark .ql-toolbar {
+  background: #1f2937;
+  border-color: #374151 !important;
+}
+.dark .ql-container {
+  background: #111827;
+  border-color: #374151 !important;
+  color: #f3f4f6;
+}
+.dark .ql-editor.ql-blank::before {
+  color: #6b7280;
+}
+.dark .ql-stroke { stroke: #9ca3af; }
+.dark .ql-fill   { fill: #9ca3af; }
+.dark .ql-picker-label { color: #9ca3af; }

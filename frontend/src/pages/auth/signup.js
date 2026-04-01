@@ -14,14 +14,10 @@ export default function SignUp() {
   async function handleSubmit(e) {
     e.preventDefault();
     setErrorMsg("");
-    if (password !== confirm) {
-      setErrorMsg("Passwords do not match");
-      return;
-    }
+    if (password !== confirm) { setErrorMsg("Passwords do not match"); return; }
     setLoading(true);
     try {
       await signupUser({ username, password, passwordConfirm: confirm });
-      // そのままログインページへ誘導 or 自動ログイン
       router.push("/auth/login");
     } catch (err) {
       setErrorMsg(err.message);
@@ -31,52 +27,24 @@ export default function SignUp() {
   }
 
   return (
-    <main className="max-w-md mx-auto px-4 py-10">
-      <h1 className="text-2xl font-bold">Sign Up</h1>
-      <form onSubmit={handleSubmit} className="mt-6 space-y-4">
+    <main className="page-wrap-sm">
+      <h1 className="page-title mb-8">Sign Up</h1>
+      <form onSubmit={handleSubmit} className="space-y-4">
         <div>
-          <label className="block text-sm mb-1">Username</label>
-          <input
-            className="w-full rounded border px-3 py-2"
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
-            autoComplete="name"
-            required
-          />
+          <label className="label">Username</label>
+          <input className="input" value={username} onChange={(e) => setUsername(e.target.value)} autoComplete="username" required />
         </div>
         <div>
-          <label className="block text-sm mb-1">Password</label>
-          <input
-            className="w-full rounded border px-3 py-2"
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            autoComplete="new-password"
-            required
-            minLength={6}
-          />
+          <label className="label">Password</label>
+          <input className="input" type="password" value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="new-password" required minLength={6} />
         </div>
         <div>
-          <label className="block text-sm mb-1">Confirm password</label>
-          <input
-            className="w-full rounded border px-3 py-2"
-            type="password"
-            value={confirm}
-            onChange={(e) => setConfirm(e.target.value)}
-            autoComplete="new-password"
-            required
-            minLength={6}
-          />
+          <label className="label">Confirm password</label>
+          <input className="input" type="password" value={confirm} onChange={(e) => setConfirm(e.target.value)} autoComplete="new-password" required minLength={6} />
         </div>
-
-        {errorMsg && <p className="text-sm text-red-600">{errorMsg}</p>}
-
-        <button
-          type="submit"
-          disabled={loading}
-          className="w-full rounded-lg bg-blue-600 text-white py-2 disabled:opacity-60"
-        >
-          {loading ? "Creating..." : "Create account"}
+        {errorMsg && <p className="text-error">{errorMsg}</p>}
+        <button type="submit" disabled={loading} className="btn-primary w-full disabled:opacity-60">
+          {loading ? "Creating…" : "Create account"}
         </button>
       </form>
     </main>
