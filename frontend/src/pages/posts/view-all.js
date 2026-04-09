@@ -101,35 +101,35 @@ export default function ViewAllPostsPage() {
   const [tab, setTab] = useState('favorites');
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [fetchError, setFetchError] = useState('');
 
   const fetchList = async (nextTab) => {
     if (!user) { setItems([]); return; }
     setLoading(true);
+    setFetchError('');
     try {
-      if (nextTab === 'favorites') {
-        const data = await api('/api/favorites/mine');
-        setItems(data.items || []);
-      } else {
-        const data = await api('/api/posts/my?ownerOnly=1');
-        setItems(data.items || []);
-      }
+      const endpoint = nextTab === 'favorites' ? '/api/favorites/mine' : '/api/posts/my?ownerOnly=1';
+      const data = await api(endpoint);
+      setItems(data.items || []);
     } catch (e) {
-      if (String(e.message).includes('401')) { setItems([]); }
-      else { console.error(e); }
+      console.error('[fetchList]', e);
+      setFetchError(e.message || 'エラーが発生しました');
+      setItems([]);
     } finally {
       setLoading(false);
     }
   };
 
-  // タブ切替・ログイン状態変化時に取得
+  // タブ切替・ログイン状態変化・ページ再表示時に取得
   useEffect(() => {
     if (!authReady || !user) { setItems([]); return; }
     fetchList(tab);
   }, [tab, authReady, user]);
 
-  // ページに戻ってきたときも再取得（お気に入り追加後など）
+  // Next.js クライアントルーティングで戻ってきたときも再取得
   useEffect(() => {
-    const onRouteChange = () => {
+    const onRouteChange = (url) => {
+      if (!url.includes('/posts/view-all')) return;
       if (authReady && user) fetchList(tab);
     };
     router.events.on('routeChangeComplete', onRouteChange);
@@ -166,9 +166,12 @@ export default function ViewAllPostsPage() {
         ))}
       </div>
 
+      {fetchError && (
+        <p className="text-error text-sm mb-3">{fetchError}</p>
+      )}
       {loading ? (
         <p className="text-secondary text-sm">読み込み中…</p>
-      ) : items.length === 0 ? (
+      ) : items.length === 0 && !fetchError ? (
         <p className="text-secondary text-sm">{emptyText}</p>
       ) : (
         <div className="space-y-3">

@@ -159,7 +159,14 @@ export default function PostDetail() {
               {deleting ? "削除中…" : "削除"}
             </button>
           )}
-          <Link href="/posts/view-all" className="btn-ghost btn-sm">戻る</Link>
+          <button
+            type="button"
+            onClick={() => postId
+              ? router.push(`/posts/view?restore=${encodeURIComponent(postId)}`)
+              : router.back()
+            }
+            className="btn-ghost btn-sm"
+          >戻る</button>
         </div>
       </div>
 
