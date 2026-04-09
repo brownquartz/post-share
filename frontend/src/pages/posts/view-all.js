@@ -134,6 +134,15 @@ export default function ViewAllPostsPage() {
     [tab]
   );
 
+  if (authReady && !user) {
+    return (
+      <main className="page-wrap text-center py-20">
+        <p className="text-gray-500 dark:text-gray-400 mb-4">ログインが必要です</p>
+        <Link href="/auth/login" className="btn-primary">ログイン</Link>
+      </main>
+    );
+  }
+
   return (
     <main className="page-wrap pt-10">
       <h1 className="page-title">My Posts</h1>
