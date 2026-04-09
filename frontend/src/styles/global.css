@@ -126,11 +126,11 @@
   .page-wrap-sm { @apply max-w-sm  mx-auto px-4 py-16; }
 
   /* ── Page title ────────────────────────────────── */
-  .page-title { @apply text-2xl font-bold text-primary mb-6; }
+  .page-title { @apply text-2xl font-bold text-gray-900 dark:text-gray-100 mb-6; }
 
   /* ── Form helpers ──────────────────────────────── */
   .text-error   { @apply text-sm text-red-500; }
-  .radio-label  { @apply inline-flex items-center gap-2 text-sm text-primary cursor-pointer; }
+  .radio-label  { @apply inline-flex items-center gap-2 text-sm text-gray-900 dark:text-gray-100 cursor-pointer; }
   .radio-dim    { @apply inline-flex items-center gap-2 text-sm opacity-40 cursor-not-allowed; }
 
   /* ── Quill wrapper ─────────────────────────────── */
