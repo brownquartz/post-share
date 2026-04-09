@@ -43,12 +43,16 @@ export default function FavoriteButton({ postPkId, initialFavorited, onChanged }
     <button
       onClick={toggle}
       disabled={busy}
-      className={`inline-flex items-center gap-1 rounded-2xl px-3 py-1 border text-sm
-        ${favorited ? 'border-yellow-500' : 'border-gray-400'}`}
-      title={favorited ? 'Unfavorite' : 'Favorite'}
+      className={`inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-sm font-medium
+        border transition-colors cursor-pointer select-none disabled:opacity-50
+        ${favorited
+          ? 'border-yellow-500/70 text-yellow-400 bg-yellow-500/10 hover:bg-yellow-500/20 active:bg-yellow-500/30'
+          : 'border-gray-300 dark:border-gray-600 text-gray-500 dark:text-gray-400 hover:border-yellow-500/60 hover:text-yellow-400 hover:bg-yellow-500/10 active:bg-yellow-500/20'
+        }`}
+      title={favorited ? 'お気に入りを解除' : 'お気に入りに追加'}
     >
       <span>{favorited ? '★' : '☆'}</span>
-      <span>{favorited ? 'Favorited' : 'Favorite'}</span>
+      <span>{favorited ? 'お気に入り済' : 'お気に入り'}</span>
     </button>
   );
 }

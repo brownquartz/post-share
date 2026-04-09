@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, useRef } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
@@ -47,14 +47,16 @@ function FavoriteButton({ postPkId, initialFavorited, onChanged }) {
   return (
     <button
       onClick={toggle} disabled={busy}
-      className={`btn btn-xs focus-ring ${
-        favorited
-          ? 'border border-yellow-500/70 text-yellow-400 hover:bg-yellow-500/10'
-          : 'btn-secondary'
-      }`}
-      title={favorited ? 'Unfavorite' : 'Favorite'}
+      className={`inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-sm font-medium
+        border transition-colors cursor-pointer select-none disabled:opacity-50
+        ${favorited
+          ? 'border-yellow-500/70 text-yellow-400 bg-yellow-500/10 hover:bg-yellow-500/20'
+          : 'border-gray-300 dark:border-gray-600 text-gray-500 dark:text-gray-400 hover:border-yellow-500/60 hover:text-yellow-400 hover:bg-yellow-500/10'
+        }`}
+      title={favorited ? 'お気に入りを解除' : 'お気に入りに追加'}
     >
-      {favorited ? '★ Favorited' : '☆ Favorite'}
+      <span>{favorited ? '★' : '☆'}</span>
+      <span>{favorited ? 'お気に入り済' : 'お気に入り'}</span>
     </button>
   );
 }
@@ -95,20 +97,19 @@ function PostCard({ item, onFavoriteChanged }) {
 
 export default function ViewAllPostsPage() {
   const { user, authReady } = useAuth();
+  const router = useRouter();
   const [tab, setTab] = useState('favorites');
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(false);
-  const lastFetchKeyRef = useRef('');
 
-  const fetchList = async (nextTab = tab) => {
+  const fetchList = async (nextTab) => {
+    if (!user) { setItems([]); return; }
     setLoading(true);
     try {
       if (nextTab === 'favorites') {
-        if (!user) { setItems([]); return; }
         const data = await api('/api/favorites/mine');
         setItems(data.items || []);
       } else {
-        if (!user) { setItems([]); return; }
         const data = await api('/api/posts/my?ownerOnly=1');
         setItems(data.items || []);
       }
@@ -120,14 +121,20 @@ export default function ViewAllPostsPage() {
     }
   };
 
+  // タブ切替・ログイン状態変化時に取得
   useEffect(() => {
-    if (!authReady) return;
-    const key = `${user ? user.id : 'guest'}:${tab}`;
-    if (lastFetchKeyRef.current === key) return;
-    lastFetchKeyRef.current = key;
-    if (!user) { setItems([]); return; }
+    if (!authReady || !user) { setItems([]); return; }
     fetchList(tab);
   }, [tab, authReady, user]);
+
+  // ページに戻ってきたときも再取得（お気に入り追加後など）
+  useEffect(() => {
+    const onRouteChange = () => {
+      if (authReady && user) fetchList(tab);
+    };
+    router.events.on('routeChangeComplete', onRouteChange);
+    return () => router.events.off('routeChangeComplete', onRouteChange);
+  }, [router.events, authReady, user, tab]);
 
   const emptyText = useMemo(
     () => tab === 'favorites' ? 'お気に入りがありません' : 'オーナー専用の投稿がありません',
