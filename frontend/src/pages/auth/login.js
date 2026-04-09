@@ -30,24 +30,24 @@ export default function Login() {
 
   return (
     <main className="page-wrap-sm">
-      <h1 className="page-title mb-8">Login</h1>
+      <h1 className="page-title mb-8">ログイン</h1>
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
-          <label className="label">Username</label>
+          <label className="label">ユーザー名</label>
           <input className="input" value={username} onChange={(e) => setUsername(e.target.value)} autoComplete="username" required />
         </div>
         <div>
-          <label className="label">Password</label>
+          <label className="label">パスワード</label>
           <input className="input" type="password" value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="current-password" required />
         </div>
         {errorMsg && <p className="text-error">{errorMsg}</p>}
         <button type="submit" disabled={loading} className="btn-primary w-full disabled:opacity-60">
-          {loading ? "Signing in…" : "Sign in"}
+          {loading ? "ログイン中…" : "ログイン"}
         </button>
       </form>
       <p className="mt-6 text-center text-sm text-secondary">
-        No account?{" "}
-        <Link href="/auth/signup" className="text-brand font-medium hover:underline">Create one</Link>
+        アカウントをお持ちでない方は{" "}
+        <Link href="/auth/signup" className="text-brand font-medium hover:underline">新規登録</Link>
       </p>
     </main>
   );

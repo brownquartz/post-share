@@ -64,7 +64,7 @@ function PostCard({ item, onFavoriteChanged }) {
   const isLocked = !item.canView;
 
   const handleUnlock = async () => {
-    const plain = prompt('Enter password for this post:');
+    const plain = prompt('この投稿のパスワードを入力してください：');
     if (!plain) return;
     const hex = await sha256Hex(plain);
     sessionStorage.setItem(`view:post:${item.postId}`, hex);
@@ -76,7 +76,7 @@ function PostCard({ item, onFavoriteChanged }) {
     <div className="card p-4 flex items-center justify-between gap-4">
       <div className="min-w-0">
         <div className="text-xs text-muted">{item.postId}</div>
-        <div className="font-semibold text-primary truncate">{item.title || '(no title)'}</div>
+        <div className="font-semibold text-primary truncate">{item.title || '(タイトルなし)'}</div>
         <div className="text-xs text-secondary mt-0.5">
           {item.viewPolicy} · {new Date(item.createdAt).toLocaleString()}
         </div>
@@ -84,9 +84,9 @@ function PostCard({ item, onFavoriteChanged }) {
       <div className="flex items-center gap-2 shrink-0">
         <FavoriteButton postPkId={item.id} initialFavorited={item.isFavorited} onChanged={onFavoriteChanged} />
         {isLocked ? (
-          <button onClick={handleUnlock} className="btn-ghost btn-xs">Unlock</button>
+          <button onClick={handleUnlock} className="btn-ghost btn-xs">解錠</button>
         ) : (
-          <Link href={`/posts/${item.id}?aid=${encodeURIComponent(item.postId)}`} className="btn-primary btn-xs">View</Link>
+          <Link href={`/posts/${item.id}?aid=${encodeURIComponent(item.postId)}`} className="btn-primary btn-xs">開く</Link>
         )}
       </div>
     </div>
@@ -130,7 +130,7 @@ export default function ViewAllPostsPage() {
   }, [tab, authReady, user]);
 
   const emptyText = useMemo(
-    () => tab === 'favorites' ? 'No favorites yet.' : 'No owner-only posts found.',
+    () => tab === 'favorites' ? 'お気に入りがありません' : 'オーナー専用の投稿がありません',
     [tab]
   );
 
@@ -145,7 +145,7 @@ export default function ViewAllPostsPage() {
 
   return (
     <main className="page-wrap pt-10">
-      <h1 className="page-title">My Posts</h1>
+      <h1 className="page-title">マイポスト</h1>
 
       <div className="flex gap-2 mb-6">
         {['favorites', 'owner'].map((t) => (
@@ -154,13 +154,13 @@ export default function ViewAllPostsPage() {
             onClick={() => setTab(t)}
             className={`btn focus-ring ${tab === t ? 'btn-solid-brand' : 'btn-secondary'}`}
           >
-            {t === 'favorites' ? '★ Favorites' : 'Owner-only'}
+            {t === 'favorites' ? '★ お気に入り' : 'オーナーのみ'}
           </button>
         ))}
       </div>
 
       {loading ? (
-        <p className="text-secondary text-sm">Loading…</p>
+        <p className="text-secondary text-sm">読み込み中…</p>
       ) : items.length === 0 ? (
         <p className="text-secondary text-sm">{emptyText}</p>
       ) : (

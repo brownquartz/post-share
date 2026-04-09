@@ -14,7 +14,7 @@ export default function SignUp() {
   async function handleSubmit(e) {
     e.preventDefault();
     setErrorMsg("");
-    if (password !== confirm) { setErrorMsg("Passwords do not match"); return; }
+    if (password !== confirm) { setErrorMsg("パスワードが一致しません"); return; }
     setLoading(true);
     try {
       await signupUser({ username, password, passwordConfirm: confirm });
@@ -28,23 +28,23 @@ export default function SignUp() {
 
   return (
     <main className="page-wrap-sm">
-      <h1 className="page-title mb-8">Sign Up</h1>
+      <h1 className="page-title mb-8">新規登録</h1>
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
-          <label className="label">Username</label>
+          <label className="label">ユーザー名</label>
           <input className="input" value={username} onChange={(e) => setUsername(e.target.value)} autoComplete="username" required />
         </div>
         <div>
-          <label className="label">Password</label>
+          <label className="label">パスワード</label>
           <input className="input" type="password" value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="new-password" required minLength={6} />
         </div>
         <div>
-          <label className="label">Confirm password</label>
+          <label className="label">パスワード確認</label>
           <input className="input" type="password" value={confirm} onChange={(e) => setConfirm(e.target.value)} autoComplete="new-password" required minLength={6} />
         </div>
         {errorMsg && <p className="text-error">{errorMsg}</p>}
         <button type="submit" disabled={loading} className="btn-primary w-full disabled:opacity-60">
-          {loading ? "Creating…" : "Create account"}
+          {loading ? "登録中…" : "登録する"}
         </button>
       </form>
     </main>

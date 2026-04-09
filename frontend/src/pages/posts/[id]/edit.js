@@ -79,51 +79,51 @@ export default function EditPostPage() {
   return (
     <main className="page-wrap">
       <div className="flex items-center justify-between gap-3 mb-6">
-        <h1 className="page-title mb-0">Edit Post</h1>
+        <h1 className="page-title mb-0">投稿を編集</h1>
         <div className="flex gap-2">
-          <button type="button" onClick={() => router.back()} className="btn-ghost btn-sm">Cancel</button>
+          <button type="button" onClick={() => router.back()} className="btn-ghost btn-sm">キャンセル</button>
           <button type="button" onClick={handleSave} disabled={saving} className="btn-primary btn-sm disabled:opacity-60">
-            {saving ? "Saving…" : "Save"}
+            {saving ? "保存中…" : "保存"}
           </button>
         </div>
       </div>
 
-      {loading && <p className="text-secondary text-sm">Loading…</p>}
+      {loading && <p className="text-secondary text-sm">読み込み中…</p>}
       {error   && <p className="text-error">{error}</p>}
 
       {!loading && !error && (
         <form onSubmit={handleSave} className="space-y-5">
           <div>
-            <label className="label">Title</label>
+            <label className="label">タイトル</label>
             <input className="input" value={title} onChange={(e) => setTitle(e.target.value)} required />
           </div>
 
           <div>
-            <label className="label">Content</label>
+            <label className="label">内容</label>
             <div className="quill-wrap rich-quill">
               <ReactQuill theme="snow" value={html} onChange={setHtml} />
             </div>
           </div>
 
           <div>
-            <label className="label">Edit / Delete Policy</label>
+            <label className="label">編集・削除権限</label>
             <div className="flex flex-wrap gap-4">
-              <label className="radio-label"><input type="radio" name="policy" value="anyone" checked={editPolicy === "anyone"} onChange={() => setEditPolicy("anyone")} /><span>Anyone (ID+PW)</span></label>
-              <label className={user ? "radio-label" : "radio-dim"}><input type="radio" name="policy" value="owner" disabled={!user} checked={editPolicy === "owner"} onChange={() => setEditPolicy("owner")} /><span>Owner only</span></label>
-              <label className="radio-label"><input type="radio" name="policy" value="locked" checked={editPolicy === "locked"} onChange={() => setEditPolicy("locked")} /><span>Locked</span></label>
+              <label className="radio-label"><input type="radio" name="policy" value="anyone" checked={editPolicy === "anyone"} onChange={() => setEditPolicy("anyone")} /><span>誰でも (ID+PW)</span></label>
+              <label className={user ? "radio-label" : "radio-dim"}><input type="radio" name="policy" value="owner" disabled={!user} checked={editPolicy === "owner"} onChange={() => setEditPolicy("owner")} /><span>オーナーのみ</span></label>
+              <label className="radio-label"><input type="radio" name="policy" value="locked" checked={editPolicy === "locked"} onChange={() => setEditPolicy("locked")} /><span>ロック</span></label>
             </div>
           </div>
 
           <div>
-            <label className="label">Change view password <span className="text-muted font-normal">(optional)</span></label>
-            <input className="input" type="password" value={newViewPassword} onChange={(e) => setNewViewPassword(e.target.value)} placeholder="Leave blank to keep current password" />
-            <p className="text-xs text-muted mt-1">入力した場合は新しいパスワードで再暗号化します。</p>
+            <label className="label">閲覧パスワードを変更 <span className="text-muted font-normal">(任意)</span></label>
+            <input className="input" type="password" value={newViewPassword} onChange={(e) => setNewViewPassword(e.target.value)} placeholder="空白の場合は現在のパスワードを維持" />
+            <p className="text-xs text-muted mt-1">入力した場合は新しいパスワードで再暗号化します</p>
           </div>
 
           <div className="flex gap-2 pt-2">
-            <button type="button" onClick={() => router.back()} className="btn-ghost">Cancel</button>
+            <button type="button" onClick={() => router.back()} className="btn-ghost">キャンセル</button>
             <button type="submit" disabled={saving} className="btn-primary disabled:opacity-60">
-              {saving ? "Saving…" : "Save"}
+              {saving ? "保存中…" : "保存"}
             </button>
           </div>
         </form>

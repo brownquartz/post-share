@@ -152,35 +152,35 @@ export default function PostDetail() {
             <FavoriteButton postPkId={postPkId} initialFavorited={favorited} onChanged={setByToggle} />
           ) : null}
           {canEdit && (
-            <Link href={`/posts/${id}/edit?aid=${encodeURIComponent(postId)}`} className="btn-ghost btn-sm">Edit</Link>
+            <Link href={`/posts/${id}/edit?aid=${encodeURIComponent(postId)}`} className="btn-ghost btn-sm">編集</Link>
           )}
           {canDelete && (
             <button type="button" onClick={handleDelete} disabled={deleting} className="btn btn-danger hover-lift focus-ring btn-sm disabled:opacity-60">
-              {deleting ? "Deleting…" : "Delete"}
+              {deleting ? "削除中…" : "削除"}
             </button>
           )}
-          <Link href="/posts/view-all" className="btn-ghost btn-sm">Back</Link>
+          <Link href="/posts/view-all" className="btn-ghost btn-sm">戻る</Link>
         </div>
       </div>
 
-      {loading && <p className="mt-6 text-secondary text-sm">Loading…</p>}
+      {loading && <p className="mt-6 text-secondary text-sm">読み込み中…</p>}
       {error   && <p className="mt-6 text-error">{error}</p>}
 
       {content && <article className="mt-6 prose dark:prose-invert max-w-none" dangerouslySetInnerHTML={{ __html: content }} />}
 
       <section id="comments" className="mt-10">
-        <h2 className="text-lg font-semibold text-primary mb-3">Comments</h2>
+        <h2 className="text-lg font-semibold text-primary mb-3">コメント</h2>
         {commentsLoading ? (
-          <p className="text-secondary text-sm">Loading comments…</p>
+          <p className="text-secondary text-sm">コメント読み込み中…</p>
         ) : commentError ? (
           <p className="text-error">{commentError}</p>
         ) : (
           <ul className="space-y-3">
-            {comments.length === 0 && <li className="text-secondary text-sm">No comments yet.</li>}
+            {comments.length === 0 && <li className="text-secondary text-sm">コメントはまだありません</li>}
             {comments.map((c) => (
               <li key={c.id} className="card p-3">
                 <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium text-primary">{c.name || "Anonymous"}</span>
+                  <span className="text-sm font-medium text-primary">{c.name || "匿名"}</span>
                   <span className="text-xs text-muted">{c.createdAt ? new Date(c.createdAt).toLocaleString() : ""}</span>
                 </div>
                 <p className="mt-1 text-secondary text-sm whitespace-pre-wrap">{c.content}</p>
@@ -191,13 +191,13 @@ export default function PostDetail() {
         {canComment && (
           <form onSubmit={handleSubmitComment} className="mt-4 space-y-2">
             <label className="flex items-center gap-2 text-xs text-secondary">
-              <span>Display name</span>
-              <input className="input !py-1 !px-2 w-32" value={commentName} onChange={(e) => setCommentName(e.target.value)} placeholder="Anonymous" />
+              <span>表示名</span>
+              <input className="input !py-1 !px-2 w-32" value={commentName} onChange={(e) => setCommentName(e.target.value)} placeholder="匿名" />
             </label>
             <div className="flex gap-2">
-              <input className="input flex-1" placeholder="Add a comment…" value={commentText} onChange={(e) => setCommentText(e.target.value)} />
+              <input className="input flex-1" placeholder="コメントを入力…" value={commentText} onChange={(e) => setCommentText(e.target.value)} />
               <button type="submit" className="btn-primary" disabled={commentSubmitting}>
-                {commentSubmitting ? "Posting…" : "Post"}
+                {commentSubmitting ? "投稿中…" : "投稿"}
               </button>
             </div>
           </form>

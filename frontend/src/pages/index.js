@@ -3,70 +3,43 @@ import Link from 'next/link';
 import { useAuth } from '../context/AuthContext';
 
 export default function Home() {
-  const { user } = useAuth();
-
-  const steps = [
-    {
-      step: '01', title: 'Create a post',
-      desc: 'Set a Post ID, visibility, and optional password.',
-      href: '/posts/new', label: 'Create post',
-    },
-    {
-      step: '02', title: 'Share credentials',
-      desc: 'Share the Post ID and password with the reader.',
-      href: null, label: null,
-    },
-    {
-      step: '03', title: 'View a post',
-      desc: 'Enter the shared ID & password to read.',
-      href: '/posts/view', label: 'Open viewer',
-    },
-    ...(user ? [{
-      step: '04', title: 'Manage posts',
-      desc: 'Edit, delete, or favorite posts you own.',
-      href: '/posts/view-all', label: 'My posts',
-    }] : []),
-  ];
+  const { user, authReady } = useAuth();
 
   return (
-    <main className="max-w-4xl mx-auto px-4 py-12">
-      <header className="mb-10">
-        <h1 className="text-4xl font-bold text-primary">Post Share</h1>
-        <p className="text-secondary mt-2 text-lg">
-          Simple private posting — share an ID &amp; password to view.
-        </p>
-      </header>
+    <main className="max-w-lg mx-auto px-5 py-16 text-center">
+      {/* Hero */}
+      <h1 className="text-4xl font-bold text-primary mb-3">Post Share</h1>
+      <p className="text-secondary text-base mb-10">
+        IDとパスワードで投稿を安全に共有するサービス
+      </p>
 
-      <section className="space-y-4">
-        <h2 className="text-sm font-semibold text-secondary uppercase tracking-wider">
-          How to use
-        </h2>
-        <ol className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {steps.map(({ step, title, desc, href, label }) => (
-            <li key={step} className="card p-5 space-y-2">
-              <span className="text-xs font-bold text-brand">{step}</span>
-              <h3 className="text-base font-semibold text-primary">{title}</h3>
-              <p className="text-sm text-secondary">{desc}</p>
-              {href && (
-                <Link href={href} className="btn-primary btn-sm mt-1 inline-flex">
-                  {label}
-                </Link>
-              )}
-            </li>
-          ))}
+      {/* Main actions */}
+      <div className="space-y-3 mb-10">
+        <Link href="/posts/view" className="btn-primary w-full py-4 text-base">
+          投稿を見る
+        </Link>
+        <Link href="/posts/new" className="btn-ghost w-full py-4 text-base">
+          投稿を作る
+        </Link>
+        {authReady && user && (
+          <Link href="/posts/view-all" className="btn-ghost w-full py-3 text-sm">
+            ★ マイポスト
+          </Link>
+        )}
+      </div>
+
+      {/* Collapsible how-to */}
+      <details className="card text-left p-4">
+        <summary className="text-sm font-semibold text-secondary cursor-pointer select-none">
+          使い方
+        </summary>
+        <ol className="mt-3 space-y-2 text-sm text-secondary list-none">
+          <li><span className="text-brand font-bold mr-2">01</span>投稿を作成してPost IDとパスワードを設定する</li>
+          <li><span className="text-brand font-bold mr-2">02</span>IDとパスワードを相手に共有する</li>
+          <li><span className="text-brand font-bold mr-2">03</span>相手は「投稿を見る」からID＋パスワードで閲覧</li>
+          {user && <li><span className="text-brand font-bold mr-2">04</span>マイポストで投稿の管理・お気に入りを確認</li>}
         </ol>
-      </section>
-
-      <section className="mt-10">
-        <h2 className="text-sm font-semibold text-secondary uppercase tracking-wider mb-3">Quick links</h2>
-        <div className="flex flex-wrap gap-3">
-          <Link href="/posts/new"  className="btn-primary">New Post</Link>
-          <Link href="/posts/view" className="btn-ghost">View Posts</Link>
-          {user && (
-            <Link href="/posts/view-all" className="btn-ghost">My Posts</Link>
-          )}
-        </div>
-      </section>
+      </details>
     </main>
   );
 }
