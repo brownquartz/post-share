@@ -93,9 +93,29 @@
   }
 
   /* ── Composite buttons ─────────────────────────── */
-  /* btn-primary / btn-ghost fold in the common hover-lift + focus-ring */
-  .btn-primary { @apply btn btn-solid-brand hover-lift focus-ring; }
-  .btn-ghost   { @apply btn btn-secondary   hover-lift focus-ring; }
+  /* Tailwind v4: cannot @apply custom classes — expand all utilities inline */
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-2
+           rounded-xl px-4 py-2 text-sm font-semibold
+           select-none cursor-pointer
+           bg-brand text-white shadow-sm
+           hover:bg-brand-600 active:bg-brand-700
+           transition hover:-translate-y-0.5 hover:shadow-md
+           active:translate-y-0 active:shadow-sm
+           focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/60;
+  }
+  .btn-ghost {
+    @apply inline-flex items-center justify-center gap-2
+           rounded-xl px-4 py-2 text-sm font-semibold
+           select-none cursor-pointer
+           border border-gray-300 dark:border-gray-600
+           text-gray-700 dark:text-gray-300
+           hover:bg-gray-100 dark:hover:bg-gray-800
+           active:bg-gray-200 dark:active:bg-gray-700
+           transition hover:-translate-y-0.5 hover:shadow-md
+           active:translate-y-0 active:shadow-sm
+           focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/60;
+  }
   /* size override — stack after btn-primary / btn-ghost */
   .btn-sm { @apply text-xs px-3 py-1.5; }
   .btn-xs { @apply text-xs px-3 py-1; }
