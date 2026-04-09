@@ -56,16 +56,6 @@ router.get(
       });
     }
 
-    // パス違いの場合だけ 401 を返す（従来互換）
-    if (out.length === 0) {
-      const exists = await pool.query(
-        `SELECT 1 FROM posts WHERE post_id = $1 LIMIT 1`,
-        [postId]
-      );
-      if (exists.rowCount > 0) {
-        return res.status(401).json({ status: "error", message: "Invalid password" });
-      }
-    }
     return res.json(out);
   })
 );

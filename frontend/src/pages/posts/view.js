@@ -22,8 +22,7 @@ export default function ViewPosts() {
       const hashed = CryptoJS.SHA256(password).toString();
       const qs = new URLSearchParams({ postId, password: hashed }).toString();
       const res = await fetch(`${API_BASE}/api/posts?${qs}`, { credentials: "include" });
-      if (res.status === 401) { setError("認証に失敗しました"); return; }
-      if (!res.ok)            { setError(`HTTP ${res.status}`); return; }
+      if (!res.ok) { setError(`HTTP ${res.status}`); return; }
       const list = await res.json();
       if (!Array.isArray(list) || list.length === 0) { setError("該当の投稿がありません"); return; }
       const decrypted = list.map((p) => {
