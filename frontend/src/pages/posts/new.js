@@ -15,7 +15,7 @@ export default function NewPostPage() {
   const [title, setTitle] = useState("");
   const [postContent, setPostContent] = useState("");
   const [postId, setpostId] = useState("");
-  const [useMyId, setUseMyId] = useState(true);
+  const [useMyId, setUseMyId] = useState(!!user);
   const [errorMsg, setErrorMsg] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -84,12 +84,6 @@ export default function NewPostPage() {
   }
 
   if (!authReady) return <div className="p-6 text-secondary text-sm">セッション確認中…</div>;
-  if (!user) return (
-    <main className="page-wrap-sm text-center">
-      <p className="text-secondary mb-4">投稿を作成するにはログインが必要です</p>
-      <a href="/auth/login" className="btn-primary">ログイン</a>
-    </main>
-  );
 
   return (
     <main className="page-wrap-md">
