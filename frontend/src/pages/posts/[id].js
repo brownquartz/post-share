@@ -159,6 +159,13 @@ export default function PostDetail() {
               {deleting ? "削除中…" : "削除"}
             </button>
           )}
+          {content && (
+            <button
+              type="button"
+              onClick={() => window.print()}
+              className="btn-ghost btn-sm"
+            >PDF保存</button>
+          )}
           <button
             type="button"
             onClick={() => postId

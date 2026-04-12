@@ -10,6 +10,7 @@ const pool = require("./db.js");              // ← 使ってる前提（未使
 const authRouter = require("./routes/auth.js");
 const postsRouter = require("./routes/posts.js");
 const favoritesRouter = require('./routes/favorites');
+const feedbackRouter = require('./routes/feedback');
 
 
 const app = express();
@@ -90,6 +91,7 @@ app.use((req, _res, next) => {
 app.use("/api/auth", authRouter);
 app.use("/api/posts", postsRouter);
 app.use('/api/favorites', favoritesRouter);
+app.use('/api/feedback', feedbackRouter);
 
 // --- 404 for API ---
 app.use("/api/*", (_req, res) =>

@@ -11,6 +11,8 @@ function Drawer({ isOpen, onClose, user, authReady, signOut, toggleTheme, isDark
     { href: '/', label: 'Home' },
     { href: '/posts/view', label: '検索' },
     { href: '/posts/new', label: '投稿' },
+    { href: '/purpose', label: '目的' },
+    { href: '/feedback', label: '意見箱' },
     ...(user ? [{ href: '/posts/view-all', label: 'My Posts' }] : []),
   ];
 
