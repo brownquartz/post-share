@@ -1,7 +1,6 @@
 // src/pages/posts/new.js
 import { useState, useEffect } from "react";
 import dynamic from "next/dynamic";
-import CryptoJS from "crypto-js";
 import { API_BASE } from "../../lib/apiBase";
 import { useAuth } from "../../context/AuthContext";
 import { useRouter } from 'next/router';
@@ -19,13 +18,11 @@ export default function NewPostPage() {
   const [errorMsg, setErrorMsg] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const [viewPolicy, setViewPolicy] = useState("public_password");
-  const [editPolicy, setEditPolicy] = useState(user ? "owner" : "password");
+  const [viewPolicy, setViewPolicy] = useState("public_open");
+  const [editPolicy, setEditPolicy] = useState(user ? "owner" : "none");
   const [deletePolicy, setDeletePolicy] = useState(editPolicy);
   const [commentCreatePolicy, setCommentCreatePolicy] = useState("anyone");
   const [commentModeratePolicy, setCommentModeratePolicy] = useState("owner");
-  const [viewPassword, setViewPassword] = useState("");
-  const [showPw, setShowPw] = useState(false);
 
   useEffect(() => {
     if (viewPolicy === "owner") {
@@ -55,17 +52,11 @@ export default function NewPostPage() {
       if (!title.trim()) throw new Error("タイトルを入力してください");
       if (!postContent || postContent.replace(/<[^>]*>/g, '').trim() === '') throw new Error("内容を入力してください");
 
-      const body = { title, postId, viewPolicy, editPolicy, deletePolicy, commentCreatePolicy, commentModeratePolicy };
-
-      if (viewPolicy === "public_password") {
-        if (!viewPassword) throw new Error("パスワードを入力してください");
-        const keyHex = CryptoJS.SHA256(viewPassword).toString();
-        body.content = CryptoJS.AES.encrypt(postContent, keyHex).toString();
-        body.postPassword = keyHex;
-        if (typeof window !== "undefined") sessionStorage.setItem(`view:post:${postId}`, keyHex);
-      } else {
-        body.content = postContent;
-      }
+      const body = {
+        title, postId, content: postContent,
+        viewPolicy, editPolicy, deletePolicy,
+        commentCreatePolicy, commentModeratePolicy,
+      };
 
       const res = await fetch(`${API_BASE}/api/posts`, {
         method: "POST",
@@ -114,21 +105,10 @@ export default function NewPostPage() {
         <div>
           <label className="label">公開設定</label>
           <div className="flex flex-wrap gap-4">
-            <label className="radio-label"><input type="radio" name="viewPolicy" value="public_password" checked={viewPolicy === "public_password"} onChange={() => setViewPolicy("public_password")} /><span>パスワード必須</span></label>
+            <label className="radio-label"><input type="radio" name="viewPolicy" value="public_open" checked={viewPolicy === "public_open"} onChange={() => setViewPolicy("public_open")} /><span>全員に公開</span></label>
             <label className={user ? "radio-label" : "radio-dim"}><input type="radio" name="viewPolicy" value="owner" disabled={!user} checked={viewPolicy === "owner"} onChange={() => setViewPolicy("owner")} /><span>オーナーのみ</span></label>
             <label className="radio-label"><input type="radio" name="viewPolicy" value="locked" checked={viewPolicy === "locked"} onChange={() => setViewPolicy("locked")} /><span>ロック</span></label>
           </div>
-          {viewPolicy === "public_password" && (
-            <div className="mt-3">
-              <label className="label">パスワード</label>
-              <div className="flex items-center gap-2">
-                <input className="input" type={showPw ? "text" : "password"} value={viewPassword} onChange={(e) => setViewPassword(e.target.value)} required={viewPolicy === "public_password"} />
-                <label className="text-sm text-secondary flex items-center gap-1 whitespace-nowrap cursor-pointer">
-                  <input type="checkbox" checked={showPw} onChange={(e) => setShowPw(e.target.checked)} /> 表示
-                </label>
-              </div>
-            </div>
-          )}
         </div>
 
         <div>
@@ -138,14 +118,13 @@ export default function NewPostPage() {
           </div>
         </div>
 
-        {viewPolicy === "public_password" && (
+        {viewPolicy === "public_open" && (
           <div className="surface p-4 space-y-4">
             <div>
               <label className="label">編集権限</label>
               <div className="flex flex-wrap gap-4">
                 <label className="radio-label"><input type="radio" name="editPolicy" value="none" checked={editPolicy === "none"} onChange={() => setEditPolicy("none")} /><span>なし</span></label>
                 <label className={user ? "radio-label" : "radio-dim"}><input type="radio" name="editPolicy" value="owner" disabled={!user} checked={editPolicy === "owner"} onChange={() => setEditPolicy("owner")} /><span>オーナー</span></label>
-                <label className="radio-label"><input type="radio" name="editPolicy" value="password" checked={editPolicy === "password"} onChange={() => setEditPolicy("password")} /><span>パスワード保持者</span></label>
               </div>
               <p className="text-xs text-muted mt-1">削除権限は編集権限と同じです</p>
             </div>

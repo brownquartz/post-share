@@ -1,11 +1,11 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE || 'http://localhost:4000';
 
-async function api(path, options = {}) {
+async function apiCall(path, options = {}) {
   const res = await fetch(`${API_BASE}${path}`, {
     credentials: 'include',
     headers: { 'Content-Type': 'application/json', ...(options.headers || {}) },
@@ -25,71 +25,89 @@ async function sha256Hex(str) {
   return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
 }
 
-function FavoriteButton({ postPkId, initialFavorited, onChanged }) {
+// isPendingDelete: favorited だが削除予定（ページ離脱時に反映）
+function FavoriteButton({ postPkId, initialFavorited, isPendingDelete, onAdd, onTogglePending }) {
   const [favorited, setFavorited] = useState(!!initialFavorited);
   const [busy, setBusy] = useState(false);
 
   const toggle = async () => {
     if (busy) return;
-    setBusy(true);
-    try {
-      if (!favorited) {
-        await api('/api/favorites', { method: 'POST', body: JSON.stringify({ postId: postPkId }) });
-        setFavorited(true); onChanged?.(true);
-      } else {
-        await api(`/api/favorites/${postPkId}`, { method: 'DELETE' });
-        setFavorited(false); onChanged?.(false);
-      }
-    } catch (e) { alert(e.message); }
-    finally { setBusy(false); }
+    if (!favorited) {
+      // 追加：即時反映
+      setBusy(true);
+      try {
+        await apiCall('/api/favorites', { method: 'POST', body: JSON.stringify({ postId: postPkId }) });
+        setFavorited(true);
+        onAdd?.();
+      } catch (e) { alert(e.message); }
+      finally { setBusy(false); }
+    } else {
+      // 削除：ページ離脱時に反映（pending トグル）
+      onTogglePending(postPkId);
+    }
   };
+
+  const starClass = !favorited
+    ? 'text-gray-400 dark:text-gray-500 hover:text-yellow-400'
+    : isPendingDelete
+      ? 'text-yellow-400 opacity-30'
+      : 'text-yellow-400 hover:opacity-60';
 
   return (
     <button
-      onClick={toggle} disabled={busy}
-      className={`inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-sm font-medium
-        border transition-colors cursor-pointer select-none disabled:opacity-50
-        ${favorited
-          ? 'border-yellow-500/70 text-yellow-400 bg-yellow-500/10 hover:bg-yellow-500/20'
-          : 'border-gray-300 dark:border-gray-600 text-gray-500 dark:text-gray-400 hover:border-yellow-500/60 hover:text-yellow-400 hover:bg-yellow-500/10'
-        }`}
-      title={favorited ? 'お気に入りを解除' : 'お気に入りに追加'}
+      onClick={toggle}
+      disabled={busy}
+      title={
+        !favorited ? 'お気に入りに追加' :
+        isPendingDelete ? 'もう1度押すとキャンセル' :
+        'お気に入りから削除'
+      }
+      className={`w-8 h-8 flex items-center justify-center rounded-lg transition-all
+                  cursor-pointer select-none disabled:opacity-50 ${starClass}`}
     >
-      <span>{favorited ? '★' : '☆'}</span>
-      <span>{favorited ? 'お気に入り済' : 'お気に入り'}</span>
+      <span className="text-xl leading-none">{favorited ? '★' : '☆'}</span>
     </button>
   );
 }
 
-function PostCard({ item, onFavoriteChanged }) {
+function PostCard({ item, isPendingDelete, onAdd, onTogglePending }) {
   const router = useRouter();
   const isLocked = !item.canView;
 
-  const handleUnlock = async () => {
-    const plain = prompt('この投稿のパスワードを入力してください：');
-    if (!plain) return;
-    const hex = await sha256Hex(plain);
-    sessionStorage.setItem(`view:post:${item.postId}`, hex);
-    sessionStorage.setItem(`view:${item.postId}`, hex);
+  const handleTitleClick = async () => {
+    if (isLocked) {
+      const plain = prompt('この投稿のパスワードを入力してください：');
+      if (!plain) return;
+      const hex = await sha256Hex(plain);
+      sessionStorage.setItem(`view:post:${item.postId}`, hex);
+      sessionStorage.setItem(`view:${item.postId}`, hex);
+    }
     router.push(`/posts/${item.id}?aid=${encodeURIComponent(item.postId)}`);
   };
 
   return (
     <div className="card p-4 flex items-center justify-between gap-4">
-      <div className="min-w-0">
+      <div className="min-w-0 flex-1">
         <div className="text-xs text-muted">{item.postId}</div>
-        <div className="font-semibold text-primary truncate">{item.title || '(タイトルなし)'}</div>
+        <button
+          type="button"
+          onClick={handleTitleClick}
+          className="font-semibold text-primary text-left w-full truncate block hover:underline cursor-pointer"
+        >
+          {item.title || '(タイトルなし)'}
+        </button>
         <div className="text-xs text-secondary mt-0.5">
           {item.viewPolicy} · {new Date(item.createdAt).toLocaleString()}
         </div>
       </div>
-      <div className="flex items-center gap-2 shrink-0">
-        <FavoriteButton postPkId={item.id} initialFavorited={item.isFavorited} onChanged={onFavoriteChanged} />
-        {isLocked ? (
-          <button onClick={handleUnlock} className="btn-ghost btn-xs">解錠</button>
-        ) : (
-          <Link href={`/posts/${item.id}?aid=${encodeURIComponent(item.postId)}`} className="btn-primary btn-xs">開く</Link>
-        )}
+      <div className="shrink-0">
+        <FavoriteButton
+          postPkId={item.id}
+          initialFavorited={item.isFavorited}
+          isPendingDelete={isPendingDelete}
+          onAdd={onAdd}
+          onTogglePending={onTogglePending}
+        />
       </div>
     </div>
   );
@@ -103,13 +121,41 @@ export default function ViewAllPostsPage() {
   const [loading, setLoading] = useState(false);
   const [fetchError, setFetchError] = useState('');
 
-  const fetchList = async (nextTab) => {
+  // 削除予定IDの管理：ref で flush、state で UI 更新
+  const pendingRef = useRef(new Set());
+  const [pendingSet, setPendingSet] = useState(new Set());
+
+  const togglePending = useCallback((postPkId) => {
+    if (pendingRef.current.has(postPkId)) {
+      pendingRef.current.delete(postPkId);
+    } else {
+      pendingRef.current.add(postPkId);
+    }
+    setPendingSet(new Set(pendingRef.current));
+  }, []);
+
+  // ページ離脱時に pending 削除を一括実行
+  const flushDeletes = useCallback(() => {
+    const ids = [...pendingRef.current];
+    if (ids.length === 0) return;
+    pendingRef.current = new Set();
+    setPendingSet(new Set());
+    ids.forEach(id => {
+      fetch(`${API_BASE}/api/favorites/${id}`, {
+        method: 'DELETE',
+        credentials: 'include',
+        keepalive: true,
+      }).catch(() => {});
+    });
+  }, []);
+
+  const fetchList = useCallback(async (nextTab) => {
     if (!user) { setItems([]); return; }
     setLoading(true);
     setFetchError('');
     try {
-      const endpoint = nextTab === 'favorites' ? '/api/favorites/mine' : '/api/posts/my?ownerOnly=1';
-      const data = await api(endpoint);
+      const endpoint = nextTab === 'favorites' ? '/api/favorites/mine' : '/api/posts/my?myId=1';
+      const data = await apiCall(endpoint);
       setItems(data.items || []);
     } catch (e) {
       console.error('[fetchList]', e);
@@ -118,26 +164,37 @@ export default function ViewAllPostsPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user]);
 
-  // タブ切替・ログイン状態変化・ページ再表示時に取得
+  // タブ切替・ログイン状態変化時に取得
   useEffect(() => {
     if (!authReady || !user) { setItems([]); return; }
     fetchList(tab);
   }, [tab, authReady, user]);
 
-  // Next.js クライアントルーティングで戻ってきたときも再取得
+  // このページに戻ってきたときに再取得
   useEffect(() => {
-    const onRouteChange = (url) => {
+    const onRouteComplete = (url) => {
       if (!url.includes('/posts/view-all')) return;
       if (authReady && user) fetchList(tab);
     };
-    router.events.on('routeChangeComplete', onRouteChange);
-    return () => router.events.off('routeChangeComplete', onRouteChange);
+    router.events.on('routeChangeComplete', onRouteComplete);
+    return () => router.events.off('routeChangeComplete', onRouteComplete);
   }, [router.events, authReady, user, tab]);
 
+  // ページ離脱時に pending 削除を実行
+  useEffect(() => {
+    router.events.on('routeChangeStart', flushDeletes);
+    return () => router.events.off('routeChangeStart', flushDeletes);
+  }, [router.events, flushDeletes]);
+
+  useEffect(() => {
+    window.addEventListener('beforeunload', flushDeletes);
+    return () => window.removeEventListener('beforeunload', flushDeletes);
+  }, [flushDeletes]);
+
   const emptyText = useMemo(
-    () => tab === 'favorites' ? 'お気に入りがありません' : 'オーナー専用の投稿がありません',
+    () => tab === 'favorites' ? 'お気に入りがありません' : '自分のIDで作成した投稿がありません',
     [tab]
   );
 
@@ -161,14 +218,13 @@ export default function ViewAllPostsPage() {
             onClick={() => setTab(t)}
             className={`btn focus-ring ${tab === t ? 'btn-solid-brand' : 'btn-secondary'}`}
           >
-            {t === 'favorites' ? '★ お気に入り' : 'オーナーのみ'}
+            {t === 'favorites' ? '★ お気に入り' : '自分の投稿'}
           </button>
         ))}
       </div>
 
-      {fetchError && (
-        <p className="text-error text-sm mb-3">{fetchError}</p>
-      )}
+      {fetchError && <p className="text-error text-sm mb-3">{fetchError}</p>}
+
       {loading ? (
         <p className="text-secondary text-sm">読み込み中…</p>
       ) : items.length === 0 && !fetchError ? (
@@ -176,7 +232,13 @@ export default function ViewAllPostsPage() {
       ) : (
         <div className="space-y-3">
           {items.map(it => (
-            <PostCard key={it.id} item={it} onFavoriteChanged={() => {}} />
+            <PostCard
+              key={it.id}
+              item={it}
+              isPendingDelete={pendingSet.has(it.id)}
+              onAdd={() => {}}
+              onTogglePending={togglePending}
+            />
           ))}
         </div>
       )}

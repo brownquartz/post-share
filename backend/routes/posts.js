@@ -15,10 +15,10 @@ const {
   canCommentCreate, canCommentModerate,
 } = require("../utils/policy");
 
-// 一覧：postId + password で絞込み（※編集可否も一緒に返す）
+// 一覧：postId で絞込み（password は任意）
 router.get(
   "/",
-  beforeProcess(requireQueryFields(["postId", "password"])),
+  beforeProcess(requireQueryFields(["postId"])),
   queryCatch("GET /api/posts", async (req, res) => {
     const postId = String(req.query.postId || "").trim();
     const password  = req.query.postpassword || req.query.password || "";
@@ -68,8 +68,11 @@ router.get(
       return res.status(401).json({ status: "error", message: "Login required" });
     }
     const userId = req.user.id;
-    const ownerOnly = req.query.ownerOnly === "1";
+    const username = req.user.username;
+    // myId=1: owner_user_id=自分 AND post_id=自分のusername
+    const myIdOnly = req.query.myId === "1";
 
+    const params = myIdOnly ? [userId, username] : [userId];
     const { rows } = await pool.query(
       `SELECT p.id, p.title, p.post_id, p.view_policy, p.edit_policy, p.delete_policy,
               p.owner_user_id, p.created_at AS "createdAt", p.expires_at AS "expiresAt",
@@ -79,10 +82,10 @@ router.get(
          FROM posts p
         WHERE p.owner_user_id = $1
           AND (p.expires_at IS NULL OR p.expires_at > NOW())
-          ${ownerOnly ? "AND p.view_policy = 'owner'" : ""}
+          ${myIdOnly ? "AND p.post_id = $2" : ""}
         ORDER BY p.created_at DESC
         LIMIT 200`,
-      [userId]
+      params
     );
 
     const items = rows.map((r) => {

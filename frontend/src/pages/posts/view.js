@@ -1,6 +1,5 @@
 // pages/posts/view.js
 import { useState, useEffect } from "react";
-import CryptoJS from "crypto-js";
 import Link from "next/link";
 import { useRouter } from "next/router";
 import { API_BASE } from "../../lib/apiBase";
@@ -11,52 +10,35 @@ function truncate(text, max = 60) { return text.length > max ? text.slice(0, max
 export default function ViewPosts() {
   const router = useRouter();
   const [postId, setPostId] = useState("");
-  const [password, setPassword] = useState("");
-  const [showPw, setShowPw] = useState(false);
   const [items, setItems] = useState([]);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  // ハッシュ済みパスワードで直接検索（restore 用）
-  async function searchWithHash(searchPostId, hashedPw) {
+  async function searchByPostId(searchPostId) {
     setError(""); setItems([]); setLoading(true);
     try {
-      const qs = new URLSearchParams({ postId: searchPostId, password: hashedPw }).toString();
+      const qs = new URLSearchParams({ postId: searchPostId }).toString();
       const res = await fetch(`${API_BASE}/api/posts?${qs}`, { credentials: "include" });
       if (!res.ok) { setError(`HTTP ${res.status}`); return; }
       const list = await res.json();
       if (!Array.isArray(list) || list.length === 0) { setError("該当の投稿が見つかりませんでした"); return; }
-      const decrypted = list.map((p) => {
-        try {
-          const bytes = CryptoJS.AES.decrypt(p.content, hashedPw);
-          const html = bytes.toString(CryptoJS.enc.Utf8) || "";
-          return { ...p, preview: truncate(stripHtml(html), 60) };
-        } catch { return { ...p, preview: "(復号に失敗しました)" }; }
-      });
-      setItems(decrypted);
+      setItems(list.map(p => ({ ...p, preview: truncate(stripHtml(p.content || ""), 60) })));
     } catch (err) { setError(err?.message || "エラーが発生しました"); }
     finally { setLoading(false); }
   }
 
   async function handleSearch(e) {
     e?.preventDefault?.();
-    const hashed = CryptoJS.SHA256(password).toString();
-    // 次回 restore 用に保存
-    sessionStorage.setItem(`view:post:${postId}`, hashed);
-    sessionStorage.setItem(`view:${postId}`, hashed);
-    await searchWithHash(postId, hashed);
+    await searchByPostId(postId);
   }
 
-  // ?restore=postId のとき sessionStorage のハッシュで自動検索
+  // ?restore=postId のとき自動再検索
   useEffect(() => {
     const { restore } = router.query;
     if (!restore) return;
     const restoredId = String(restore);
-    const hash = sessionStorage.getItem(`view:post:${restoredId}`)
-              || sessionStorage.getItem(`view:${restoredId}`);
-    if (!hash) return;
     setPostId(restoredId);
-    searchWithHash(restoredId, hash);
+    searchByPostId(restoredId);
   }, [router.query]);
 
   return (
@@ -68,21 +50,6 @@ export default function ViewPosts() {
           <label className="label">ポストID</label>
           <input className="input" value={postId} onChange={(e) => setPostId(e.target.value)} required />
         </div>
-        <div>
-          <label className="label">パスワード</label>
-          <div className="flex gap-2 items-center">
-            <input
-              className="input"
-              type={showPw ? "text" : "password"}
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-            />
-            <label className="flex items-center gap-1 text-xs text-secondary whitespace-nowrap cursor-pointer">
-              <input type="checkbox" checked={showPw} onChange={(e) => setShowPw(e.target.checked)} />
-              表示
-            </label>
-          </div>
-        </div>
         <button type="submit" disabled={loading} className="btn-primary disabled:opacity-60">
           {loading ? "読み込み中…" : "検索"}
         </button>
@@ -91,39 +58,30 @@ export default function ViewPosts() {
       {error && <p className="text-error mb-4">{error}</p>}
 
       <ul className="space-y-3">
-        {items.map((p) => {
-          const handleClick = () => {
-            const hashed = CryptoJS.SHA256(password).toString();
-            sessionStorage.setItem(`view:post:${postId}`, hashed);
-            sessionStorage.setItem(`view:${postId}`, hashed);
-          };
-          return (
-            <li key={p.id} className="card p-4 flex items-start justify-between gap-3">
-              <div className="min-w-0">
-                <Link
-                  href={{ pathname: `/posts/${p.id}`, query: { aid: postId } }}
-                  onClick={handleClick}
-                  className="font-semibold text-brand hover:underline"
-                >
-                  {p.title || `(タイトルなし #${p.id})`}
-                </Link>
-                <p className="text-secondary text-sm mt-1">{p.preview}</p>
-              </div>
-              <div className="flex gap-2 shrink-0">
-                {p.canEdit && (
-                  <Link href={`/posts/${p.id}/edit?aid=${encodeURIComponent(postId)}`} className="btn-ghost btn-xs">編集</Link>
-                )}
-                <Link
-                  href={{ pathname: `/posts/${p.id}`, query: { aid: postId } }}
-                  onClick={handleClick}
-                  className="btn-primary btn-xs"
-                >
-                  開く
-                </Link>
-              </div>
-            </li>
-          );
-        })}
+        {items.map((p) => (
+          <li key={p.id} className="card p-4 flex items-start justify-between gap-3">
+            <div className="min-w-0">
+              <Link
+                href={{ pathname: `/posts/${p.id}`, query: { aid: postId } }}
+                className="font-semibold text-brand hover:underline"
+              >
+                {p.title || `(タイトルなし #${p.id})`}
+              </Link>
+              <p className="text-secondary text-sm mt-1">{p.preview}</p>
+            </div>
+            <div className="flex gap-2 shrink-0">
+              {p.canEdit && (
+                <Link href={`/posts/${p.id}/edit?aid=${encodeURIComponent(postId)}`} className="btn-ghost btn-xs">編集</Link>
+              )}
+              <Link
+                href={{ pathname: `/posts/${p.id}`, query: { aid: postId } }}
+                className="btn-primary btn-xs"
+              >
+                開く
+              </Link>
+            </div>
+          </li>
+        ))}
       </ul>
     </main>
   );

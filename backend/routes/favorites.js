@@ -33,29 +33,33 @@ router.delete('/:postId', async (req, res) => {
 
 // GET /api/favorites/mine
 router.get('/mine', async (req, res) => {
-  const userId = Number(req.user.id);
-  const { rows } = await db.query(
-    `SELECT p.*, TRUE AS is_favorited
-       FROM favorites f
-       JOIN posts p ON p.id=f.post_id
-      WHERE f.user_id=$1
-        AND (p.expires_at IS NULL OR p.expires_at > now())
-      ORDER BY f.created_at DESC
-      LIMIT 200`,
-    [userId]
-  );
-  res.json({
-    items: rows.map(r => ({
-      id: r.id,
-      postId: r.post_id,
-      title: r.title,
-      viewPolicy: r.view_policy,
-      createdAt: r.created_at,
-      isFavorited: true,
-      // 一覧では本文返さない方針
-      canView: true, // ここは本来 policy で判定するなら適宜
-    })),
-  });
+  try {
+    const userId = Number(req.user.id);
+    const { rows } = await db.query(
+      `SELECT p.*, TRUE AS is_favorited
+         FROM favorites f
+         JOIN posts p ON p.id=f.post_id
+        WHERE f.user_id=$1
+          AND (p.expires_at IS NULL OR p.expires_at > now())
+        ORDER BY f.created_at DESC
+        LIMIT 200`,
+      [userId]
+    );
+    res.json({
+      items: rows.map(r => ({
+        id: r.id,
+        postId: r.post_id,
+        title: r.title,
+        viewPolicy: r.view_policy,
+        createdAt: r.created_at,
+        isFavorited: true,
+        canView: true,
+      })),
+    });
+  } catch (e) {
+    console.error('[favorites/mine] error:', e);
+    res.status(500).json({ message: e.message });
+  }
 });
 
 module.exports = router;
