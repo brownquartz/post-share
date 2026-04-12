@@ -7,17 +7,33 @@ import { API_BASE } from "../../lib/apiBase";
 function stripHtml(html) { return html.replace(/<[^>]+>/g, ""); }
 function truncate(text, max = 60) { return text.length > max ? text.slice(0, max) + "…" : text; }
 
+async function sha256Hex(str) {
+  const enc = new TextEncoder().encode(str);
+  const buf = await crypto.subtle.digest("SHA-256", enc);
+  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, "0")).join("");
+}
+
 export default function ViewPosts() {
   const router = useRouter();
   const [postId, setPostId] = useState("");
+  const [password, setPassword] = useState("");
+  const [showPw, setShowPw] = useState(false);
   const [items, setItems] = useState([]);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  async function searchByPostId(searchPostId) {
+  async function searchByPostId(searchPostId, hashedPw = "") {
     setError(""); setItems([]); setLoading(true);
     try {
-      const qs = new URLSearchParams({ postId: searchPostId }).toString();
+      const qs = new URLSearchParams({ postId: searchPostId });
+      if (hashedPw) {
+        qs.set("postpassword", hashedPw);
+        qs.set("password", hashedPw);
+        // [id].js と edit.js が sessionStorage から読めるように保存
+        sessionStorage.setItem(`view:post:${searchPostId}`, hashedPw);
+        sessionStorage.setItem(`view:${searchPostId}`, hashedPw);
+      }
+      sessionStorage.setItem("view:lastSearch", searchPostId);
       const res = await fetch(`${API_BASE}/api/posts?${qs}`, { credentials: "include" });
       if (!res.ok) { setError(`HTTP ${res.status}`); return; }
       const list = await res.json();
@@ -29,17 +45,21 @@ export default function ViewPosts() {
 
   async function handleSearch(e) {
     e?.preventDefault?.();
-    await searchByPostId(postId);
+    const hashedPw = password.trim() ? await sha256Hex(password) : "";
+    await searchByPostId(postId, hashedPw);
   }
 
-  // ?restore=postId のとき自動再検索
+  // ?restore= または sessionStorage から復元（router.isReady 後に1回だけ実行）
   useEffect(() => {
+    if (!router.isReady) return;
     const { restore } = router.query;
-    if (!restore) return;
-    const restoredId = String(restore);
-    setPostId(restoredId);
-    searchByPostId(restoredId);
-  }, [router.query]);
+    const toRestore = restore
+      ? String(restore)
+      : (typeof window !== "undefined" ? sessionStorage.getItem("view:lastSearch") || "" : "");
+    if (!toRestore) return;
+    setPostId(toRestore);
+    searchByPostId(toRestore);
+  }, [router.isReady]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <main className="page-wrap-md">
@@ -49,6 +69,23 @@ export default function ViewPosts() {
         <div>
           <label className="label">ポストID</label>
           <input className="input" value={postId} onChange={(e) => setPostId(e.target.value)} required />
+        </div>
+        <div>
+          <label className="label">
+            パスワード <span className="text-muted font-normal text-xs ml-1">（任意）</span>
+          </label>
+          <div className="flex items-center gap-2">
+            <input
+              className="input"
+              type={showPw ? "text" : "password"}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="パスワードなしの場合は空白でOK"
+            />
+            <label className="text-xs text-secondary flex items-center gap-1 whitespace-nowrap cursor-pointer">
+              <input type="checkbox" checked={showPw} onChange={(e) => setShowPw(e.target.checked)} /> 表示
+            </label>
+          </div>
         </div>
         <button type="submit" disabled={loading} className="btn-primary disabled:opacity-60">
           {loading ? "読み込み中…" : "検索"}

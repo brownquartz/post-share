@@ -130,13 +130,37 @@
 
   /* ── Form helpers ──────────────────────────────── */
   .text-error   { @apply text-sm text-red-500; }
-  .radio-label  { @apply inline-flex items-center gap-2 text-sm text-gray-900 dark:text-gray-100 cursor-pointer; }
-  .radio-dim    { @apply inline-flex items-center gap-2 text-sm opacity-40 cursor-not-allowed; }
+
+  /* ── Radio pill buttons ────────────────────────────── */
+  .radio-label {
+    @apply inline-flex items-center justify-center
+           px-4 py-2 rounded-full border text-sm font-medium
+           cursor-pointer select-none transition-colors
+           border-gray-300 dark:border-gray-600
+           text-gray-600 dark:text-gray-400
+           hover:border-brand hover:text-brand;
+  }
+  .radio-dim {
+    @apply inline-flex items-center justify-center
+           px-4 py-2 rounded-full border text-sm font-medium
+           cursor-not-allowed select-none opacity-40
+           border-gray-300 dark:border-gray-600
+           text-gray-400 dark:text-gray-500;
+  }
 
   /* ── Quill wrapper ─────────────────────────────── */
   .quill-wrap {
     @apply border border-gray-300 dark:border-gray-700 rounded-lg overflow-hidden;
   }
+}
+
+/* ── Radio pill: hide native input, highlight when checked ── */
+.radio-label input[type="radio"],
+.radio-dim   input[type="radio"] { display: none; }
+.radio-label:has(input[type="radio"]:checked) {
+  border-color: var(--color-brand);
+  color: var(--color-brand);
+  background-color: color-mix(in srgb, var(--color-brand) 12%, transparent);
 }
 
 /* ── Quill editor ──────────────────────────────────────── */
