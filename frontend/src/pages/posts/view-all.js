@@ -1,3 +1,4 @@
+import Head from 'next/head';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import Link from 'next/link';
@@ -208,6 +209,8 @@ export default function ViewAllPostsPage() {
   }
 
   return (
+    <>
+    <Head><title>マイポスト | Post Share</title></Head>
     <main className="page-wrap pt-10">
       <h1 className="page-title">マイポスト</h1>
 
@@ -243,5 +246,6 @@ export default function ViewAllPostsPage() {
         </div>
       )}
     </main>
+    </>
   );
 }

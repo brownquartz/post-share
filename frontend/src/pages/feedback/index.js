@@ -1,4 +1,5 @@
 // pages/feedback/index.js
+import Head from 'next/head';
 import { useState } from 'react';
 import Link from 'next/link';
 import { API_BASE } from '../../lib/apiBase';
@@ -60,6 +61,8 @@ export default function FeedbackPage() {
   }
 
   return (
+    <>
+    <Head><title>意見箱 | Post Share</title></Head>
     <main className="max-w-lg mx-auto px-5 py-16">
       <h1 className="text-3xl font-bold text-primary mb-2">意見箱</h1>
       <p className="text-secondary text-sm mb-8">
@@ -83,5 +86,6 @@ export default function FeedbackPage() {
         </button>
       </form>
     </main>
+    </>
   );
 }

@@ -1,4 +1,5 @@
 // pages/auth/login.js
+import Head from "next/head";
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/router";
@@ -29,6 +30,8 @@ export default function Login() {
   }
 
   return (
+    <>
+    <Head><title>ログイン | Post Share</title></Head>
     <main className="page-wrap-sm">
       <h1 className="page-title mb-8">ログイン</h1>
       <form onSubmit={handleSubmit} className="space-y-4">
@@ -50,5 +53,6 @@ export default function Login() {
         <Link href="/auth/signup" className="text-brand font-medium hover:underline">新規登録</Link>
       </p>
     </main>
+    </>
   );
 }

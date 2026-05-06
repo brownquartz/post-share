@@ -1,4 +1,5 @@
 // pages/auth/signup.js
+import Head from "next/head";
 import { useState } from "react";
 import { useRouter } from "next/router";
 import { signupUser } from "../../lib/auth";
@@ -27,6 +28,8 @@ export default function SignUp() {
   }
 
   return (
+    <>
+    <Head><title>新規登録 | Post Share</title></Head>
     <main className="page-wrap-sm">
       <h1 className="page-title mb-8">新規登録</h1>
       <form onSubmit={handleSubmit} className="space-y-4">
@@ -48,5 +51,6 @@ export default function SignUp() {
         </button>
       </form>
     </main>
+    </>
   );
 }

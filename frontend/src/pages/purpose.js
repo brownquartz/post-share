@@ -1,6 +1,9 @@
 // pages/purpose.js
+import Head from 'next/head';
 export default function PurposePage() {
   return (
+    <>
+    <Head><title>このサービスについて | Post Share</title></Head>
     <main className="max-w-lg mx-auto px-5 py-16">
       <h1 className="text-3xl font-bold text-primary mb-6">このサービスについて</h1>
 
@@ -39,5 +42,6 @@ export default function PurposePage() {
         </p>
       </div>
     </main>
+    </>
   );
 }

@@ -1,4 +1,5 @@
 // pages/posts/view.js
+import Head from "next/head";
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/router";
@@ -62,6 +63,8 @@ export default function ViewPosts() {
   }, [router.isReady]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
+    <>
+    <Head><title>投稿を見る | Post Share</title></Head>
     <main className="page-wrap-md">
       <h1 className="page-title">投稿を見る</h1>
 
@@ -121,5 +124,6 @@ export default function ViewPosts() {
         ))}
       </ul>
     </main>
+    </>
   );
 }

@@ -26,9 +26,15 @@ router.get('/view/:token', async (req, res) => {
   res.json(rows[0]);
 });
 
-// GET /api/feedback — 管理者（ログイン必須）
-router.get('/', async (req, res) => {
+const ADMIN_USERNAME = process.env.ADMIN_USERNAME || 'park';
+function requireAdmin(req, res, next) {
   if (!req.user) return res.status(401).json({ message: 'Login required' });
+  if (req.user.username !== ADMIN_USERNAME) return res.status(403).json({ message: 'Forbidden' });
+  next();
+}
+
+// GET /api/feedback — 管理者のみ
+router.get('/', requireAdmin, async (req, res) => {
   const { rows } = await db.query(
     `SELECT id, message, status, reply, replied_at AS "repliedAt", created_at AS "createdAt"
        FROM feedback ORDER BY created_at DESC LIMIT 500`
@@ -37,8 +43,7 @@ router.get('/', async (req, res) => {
 });
 
 // PUT /api/feedback/:id — 管理者が返信・ステータス更新
-router.put('/:id', async (req, res) => {
-  if (!req.user) return res.status(401).json({ message: 'Login required' });
+router.put('/:id', requireAdmin, async (req, res) => {
   const { reply, status } = req.body;
   const validStatuses = ['未回答', '保留', '回答済み'];
   if (status && !validStatuses.includes(status))

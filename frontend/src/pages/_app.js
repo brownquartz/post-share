@@ -1,5 +1,6 @@
 // src/pages/_app.js
 import React, { useEffect, useState } from 'react';
+import Head from 'next/head';
 import { AuthProvider } from '../context/AuthContext';
 import '../styles/global.css';
 import 'react-quill/dist/quill.snow.css';
@@ -26,6 +27,10 @@ export default function App({ Component, pageProps }) {
 
   return (
     <AuthProvider apiBase={API_BASE}>
+      <Head>
+        <title>Post Share</title>
+        <meta name="description" content="IDで投稿を手軽に共有するサービス" />
+      </Head>
       <Layout toggleTheme={toggleTheme} isDark={isDark}>
         <Component {...pageProps} />
       </Layout>

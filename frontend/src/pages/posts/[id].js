@@ -1,4 +1,5 @@
 // pages/posts/[id].js
+import Head from "next/head";
 import { useRouter } from "next/router";
 import { useEffect, useMemo, useState, useCallback } from "react";
 import CryptoJS from "crypto-js";
@@ -144,6 +145,8 @@ export default function PostDetail() {
   }
 
   return (
+    <>
+    <Head><title>{title ? `${title} | Post Share` : 'Post Share'}</title></Head>
     <main className="page-wrap">
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <h1 className="text-2xl font-bold text-primary flex-1 min-w-0 truncate">{title || `Post #${id}`}</h1>
@@ -218,5 +221,6 @@ export default function PostDetail() {
         )}
       </section>
     </main>
+    </>
   );
 }

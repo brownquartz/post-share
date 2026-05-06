@@ -1,4 +1,5 @@
 // pages/feedback/admin.js
+import Head from 'next/head';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useAuth } from '../../context/AuthContext';
@@ -117,11 +118,13 @@ export default function FeedbackAdminPage() {
       .finally(() => setLoading(false));
   }, [authReady, user]);
 
-  if (authReady && !user) {
+  const ADMIN_USERNAME = 'park';
+  const isAdmin = authReady && user?.username === ADMIN_USERNAME;
+
+  if (authReady && (!user || !isAdmin)) {
     return (
       <main className="page-wrap text-center py-20">
-        <p className="text-secondary mb-4">ログインが必要です</p>
-        <Link href="/auth/login" className="btn-primary">ログイン</Link>
+        <p className="text-secondary">このページは存在しません</p>
       </main>
     );
   }
@@ -130,6 +133,8 @@ export default function FeedbackAdminPage() {
   const counts = STATUSES.reduce((acc, s) => ({ ...acc, [s]: items.filter(i => i.status === s).length }), {});
 
   return (
+    <>
+    <Head><title>意見箱 管理 | Post Share</title></Head>
     <main className="max-w-2xl mx-auto px-5 py-12">
       <h1 className="text-2xl font-bold text-primary mb-6">意見箱 — 管理</h1>
 
@@ -171,5 +176,6 @@ export default function FeedbackAdminPage() {
         ))}
       </ul>
     </main>
+    </>
   );
 }

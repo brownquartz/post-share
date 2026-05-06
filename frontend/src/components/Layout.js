@@ -4,8 +4,11 @@ import Link from 'next/link';
 import { useRouter } from 'next/router';
 import { useAuth } from '../context/AuthContext';
 
+const ADMIN_USERNAME = 'park';
+
 function Drawer({ isOpen, onClose, user, authReady, signOut, toggleTheme, isDark }) {
   const { pathname } = useRouter();
+  const isAdmin = !!user && user.username === ADMIN_USERNAME;
 
   const navItems = [
     { href: '/', label: 'Home' },
@@ -14,6 +17,7 @@ function Drawer({ isOpen, onClose, user, authReady, signOut, toggleTheme, isDark
     { href: '/purpose', label: '目的' },
     { href: '/feedback', label: '意見箱' },
     ...(user ? [{ href: '/posts/view-all', label: 'My Posts' }] : []),
+    ...(isAdmin ? [{ href: '/feedback/admin', label: '管理', admin: true }] : []),
   ];
 
   const handleLinkClick = () => onClose();
@@ -51,7 +55,7 @@ function Drawer({ isOpen, onClose, user, authReady, signOut, toggleTheme, isDark
 
         {/* Nav links */}
         <nav className="flex-1 overflow-y-auto py-4 px-3 space-y-1">
-          {navItems.map(({ href, label }) => {
+          {navItems.map(({ href, label, admin }) => {
             const active = pathname === href;
             return (
               <Link
@@ -61,9 +65,12 @@ function Drawer({ isOpen, onClose, user, authReady, signOut, toggleTheme, isDark
                 className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors
                   ${active
                     ? 'bg-brand/15 text-brand'
-                    : 'text-gray-300 hover:bg-gray-800 hover:text-gray-100'
+                    : admin
+                      ? 'text-yellow-400 hover:bg-gray-800 hover:text-yellow-300'
+                      : 'text-gray-300 hover:bg-gray-800 hover:text-gray-100'
                   }`}
               >
+                {admin && <span className="text-xs">⚙</span>}
                 {label}
               </Link>
             );

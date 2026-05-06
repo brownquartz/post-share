@@ -1,4 +1,5 @@
 // src/pages/posts/new.js
+import Head from "next/head";
 import { useState, useEffect } from "react";
 import dynamic from "next/dynamic";
 import { API_BASE } from "../../lib/apiBase";
@@ -77,6 +78,8 @@ export default function NewPostPage() {
   if (!authReady) return <div className="p-6 text-secondary text-sm">セッション確認中…</div>;
 
   return (
+    <>
+    <Head><title>投稿を作成 | Post Share</title></Head>
     <main className="page-wrap-md">
       <h1 className="page-title mb-8">投稿を作成</h1>
 
@@ -146,5 +149,6 @@ export default function NewPostPage() {
         </button>
       </form>
     </main>
+    </>
   );
 }

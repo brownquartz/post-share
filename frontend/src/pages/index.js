@@ -1,4 +1,5 @@
 // pages/index.js
+import Head from 'next/head';
 import Link from 'next/link';
 import { useAuth } from '../context/AuthContext';
 
@@ -6,6 +7,8 @@ export default function Home() {
   const { user, authReady } = useAuth();
 
   return (
+    <>
+    <Head><title>Post Share</title></Head>
     <main className="max-w-lg mx-auto px-5 py-16 text-center">
       {/* Hero */}
       <h1 className="text-4xl font-bold text-primary mb-3">Post Share</h1>
@@ -41,5 +44,6 @@ export default function Home() {
         </ol>
       </details>
     </main>
+    </>
   );
 }
