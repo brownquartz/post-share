@@ -8,6 +8,7 @@ import { API_BASE } from "../../lib/apiBase";
 import { useAuth } from "../../context/AuthContext";
 import FavoriteButton from '../../components/FavoriteButton';
 import { useFavoriteStatus } from '../../hooks/useFavoriteStatus';
+import { exportTxt, exportDocx } from '../../lib/exportPost';
 
 export default function PostDetail() {
   const { user } = useAuth();
@@ -163,11 +164,11 @@ export default function PostDetail() {
             </button>
           )}
           {content && (
-            <button
-              type="button"
-              onClick={() => window.print()}
-              className="btn-ghost btn-sm"
-            >PDF保存</button>
+            <>
+              <button type="button" onClick={() => window.print()} className="btn-ghost btn-sm">PDF</button>
+              <button type="button" onClick={() => exportTxt(title, content)} className="btn-ghost btn-sm">TXT</button>
+              <button type="button" onClick={() => exportDocx(title, content)} className="btn-ghost btn-sm">Word</button>
+            </>
           )}
           <button
             type="button"
