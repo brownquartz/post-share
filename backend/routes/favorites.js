@@ -1,5 +1,6 @@
 const router = require('express').Router();
 const db = require('../db');
+const { getFlags, canView } = require('../utils/policy');
 
 router.use((req, res, next) => {
   // ここで確実にブロック（attachAuthOptional が付いていなくても守れる）
@@ -46,15 +47,18 @@ router.get('/mine', async (req, res) => {
       [userId]
     );
     res.json({
-      items: rows.map(r => ({
-        id: r.id,
-        postId: r.post_id,
-        title: r.title,
-        viewPolicy: r.view_policy,
-        createdAt: r.created_at,
-        isFavorited: true,
-        canView: true,
-      })),
+      items: rows.map(r => {
+        const flags = getFlags(req, r, {});
+        return {
+          id: r.id,
+          postId: r.post_id,
+          title: r.title,
+          viewPolicy: r.view_policy,
+          createdAt: r.created_at,
+          isFavorited: true,
+          canView: canView(r, flags),
+        };
+      }),
     });
   } catch (e) {
     console.error('[favorites/mine] error:', e);
