@@ -8,9 +8,20 @@ import { API_BASE } from "../../lib/apiBase";
 
 function stripHtml(html) { return html.replace(/<[^>]+>/g, ""); }
 function truncate(text, max = 60) { return text.length > max ? text.slice(0, max) + "…" : text; }
+function sha256Hex(str) { return CryptoJS.SHA256(str).toString(); }
 
-function sha256Hex(str) {
-  return CryptoJS.SHA256(str).toString();
+const HISTORY_KEY = "view:idHistory";
+const MAX_HISTORY = 5;
+
+function loadHistory() {
+  if (typeof window === "undefined") return [];
+  try { return JSON.parse(localStorage.getItem(HISTORY_KEY) || "[]"); } catch { return []; }
+}
+
+function saveHistory(id) {
+  if (!id || typeof window === "undefined") return;
+  const prev = loadHistory().filter(v => v !== id);
+  localStorage.setItem(HISTORY_KEY, JSON.stringify([id, ...prev].slice(0, MAX_HISTORY)));
 }
 
 export default function ViewPosts() {
@@ -21,15 +32,18 @@ export default function ViewPosts() {
   const [items, setItems] = useState([]);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [history, setHistory] = useState([]);
+  const [showHistory, setShowHistory] = useState(false);
+
+  useEffect(() => { setHistory(loadHistory()); }, []);
 
   async function searchByPostId(searchPostId, hashedPw = "") {
-    setError(""); setItems([]); setLoading(true);
+    setError(""); setItems([]); setLoading(true); setShowHistory(false);
     try {
       const qs = new URLSearchParams({ postId: searchPostId });
       if (hashedPw) {
         qs.set("postpassword", hashedPw);
         qs.set("password", hashedPw);
-        // [id].js と edit.js が sessionStorage から読めるように保存
         sessionStorage.setItem(`view:post:${searchPostId}`, hashedPw);
         sessionStorage.setItem(`view:${searchPostId}`, hashedPw);
       }
@@ -37,7 +51,16 @@ export default function ViewPosts() {
       const res = await fetch(`${API_BASE}/api/posts?${qs}`, { credentials: "include" });
       if (!res.ok) { setError(`HTTP ${res.status}`); return; }
       const list = await res.json();
-      if (!Array.isArray(list) || list.length === 0) { setError("該当の投稿が見つかりませんでした"); return; }
+      if (!Array.isArray(list) || list.length === 0) {
+        setError(
+          hashedPw
+            ? "投稿が見つかりませんでした。IDまたはパスワードをご確認ください"
+            : "投稿が見つかりませんでした。パスワードが必要な投稿の場合はパスワードを入力してください"
+        );
+        return;
+      }
+      saveHistory(searchPostId);
+      setHistory(loadHistory());
       setItems(list.map(p => ({ ...p, preview: truncate(stripHtml(p.content || ""), 60) })));
     } catch (err) { setError(err?.message || "エラーが発生しました"); }
     finally { setLoading(false); }
@@ -49,7 +72,14 @@ export default function ViewPosts() {
     await searchByPostId(postId, hashedPw);
   }
 
-  // ?restore= または sessionStorage から復元（router.isReady 後に1回だけ実行）
+  function handleHistorySelect(id) {
+    setPostId(id);
+    setShowHistory(false);
+    const hashedPw = password.trim() ? sha256Hex(password) : "";
+    searchByPostId(id, hashedPw);
+  }
+
+  // ?restore= または sessionStorage から復元
   useEffect(() => {
     if (!router.isReady) return;
     const { restore } = router.query;
@@ -70,7 +100,31 @@ export default function ViewPosts() {
       <form onSubmit={handleSearch} className="card p-5 space-y-4 mb-8">
         <div>
           <label className="label">ポストID</label>
-          <input className="input" value={postId} onChange={(e) => setPostId(e.target.value)} required />
+          <div className="relative">
+            <input
+              className="input"
+              value={postId}
+              onChange={(e) => { setPostId(e.target.value); setShowHistory(true); }}
+              onFocus={() => setShowHistory(true)}
+              onBlur={() => setTimeout(() => setShowHistory(false), 150)}
+              required
+            />
+            {showHistory && history.length > 0 && (
+              <ul className="absolute z-10 w-full mt-1 card border border-gray-200 dark:border-gray-700 shadow-lg overflow-hidden">
+                {history.map(id => (
+                  <li key={id}>
+                    <button
+                      type="button"
+                      onMouseDown={() => handleHistorySelect(id)}
+                      className="w-full text-left px-3 py-2 text-sm text-secondary hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                    >
+                      {id}
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
         </div>
         <div>
           <label className="label">
@@ -94,7 +148,11 @@ export default function ViewPosts() {
         </button>
       </form>
 
-      {error && <p className="text-error mb-4">{error}</p>}
+      {error && (
+        <div className="card p-4 mb-4 border-yellow-400/40 bg-yellow-50/10">
+          <p className="text-sm text-yellow-600 dark:text-yellow-400">{error}</p>
+        </div>
+      )}
 
       <ul className="space-y-3">
         {items.map((p) => (

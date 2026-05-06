@@ -24,6 +24,7 @@ export default function PostDetail() {
   const [canDelete, setCanDelete] = useState(false);
   const [canComment, setCanComment] = useState(true);
   const [deleting, setDeleting] = useState(false);
+  const [copied, setCopied] = useState(false);
   const [comments, setComments] = useState([]);
   const [commentsLoading, setCommentsLoading] = useState(false);
   const [commentText, setCommentText] = useState("");
@@ -152,6 +153,20 @@ export default function PostDetail() {
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <h1 className="text-2xl font-bold text-primary flex-1 min-w-0 truncate">{title || `Post #${id}`}</h1>
         <div className="flex items-center gap-2 shrink-0">
+          {postId && (
+            <button
+              type="button"
+              onClick={() => {
+                navigator.clipboard.writeText(postId);
+                setCopied(true);
+                setTimeout(() => setCopied(false), 2000);
+              }}
+              className="btn-ghost btn-sm"
+              title="Post IDをコピー"
+            >
+              {copied ? "✓ コピー済み" : `ID: ${postId}`}
+            </button>
+          )}
           {user && postPkId ? (
             <FavoriteButton postPkId={postPkId} initialFavorited={favorited} onChanged={setByToggle} />
           ) : null}
