@@ -2,15 +2,14 @@
 import Head from "next/head";
 import { useState, useEffect } from "react";
 import dynamic from "next/dynamic";
+import CryptoJS from "crypto-js";
 import { API_BASE } from "../../lib/apiBase";
 import { useAuth } from "../../context/AuthContext";
 
 const ReactQuill = dynamic(() => import("react-quill"), { ssr: false });
 
-async function sha256Hex(str) {
-  const enc = new TextEncoder().encode(str);
-  const buf = await crypto.subtle.digest("SHA-256", enc);
-  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, "0")).join("");
+function sha256Hex(str) {
+  return CryptoJS.SHA256(str).toString();
 }
 
 export default function NewPostPage() {
@@ -62,8 +61,8 @@ export default function NewPostPage() {
       };
 
       if (viewPolicy === "public_password") {
-        const hash = await sha256Hex(viewPassword);
-        body.content = postContent; // コンテンツはそのまま（復号はクライアント側不要）
+        const hash = sha256Hex(viewPassword);
+        body.content = CryptoJS.AES.encrypt(postContent, hash).toString();
         body.postPassword = hash;
         sessionStorage.setItem(`view:post:${postId}`, hash);
         sessionStorage.setItem(`view:${postId}`, hash);

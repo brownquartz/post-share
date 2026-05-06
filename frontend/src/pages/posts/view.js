@@ -3,15 +3,14 @@ import Head from "next/head";
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/router";
+import CryptoJS from "crypto-js";
 import { API_BASE } from "../../lib/apiBase";
 
 function stripHtml(html) { return html.replace(/<[^>]+>/g, ""); }
 function truncate(text, max = 60) { return text.length > max ? text.slice(0, max) + "…" : text; }
 
-async function sha256Hex(str) {
-  const enc = new TextEncoder().encode(str);
-  const buf = await crypto.subtle.digest("SHA-256", enc);
-  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, "0")).join("");
+function sha256Hex(str) {
+  return CryptoJS.SHA256(str).toString();
 }
 
 export default function ViewPosts() {
@@ -46,7 +45,7 @@ export default function ViewPosts() {
 
   async function handleSearch(e) {
     e?.preventDefault?.();
-    const hashedPw = password.trim() ? await sha256Hex(password) : "";
+    const hashedPw = password.trim() ? sha256Hex(password) : "";
     await searchByPostId(postId, hashedPw);
   }
 

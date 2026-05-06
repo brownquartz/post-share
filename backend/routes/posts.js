@@ -247,10 +247,29 @@ router.put(
       return res.status(403).json({ status: "error", message: "Forbidden" });
     }
 
-    // ...（ここはあなたの既存ロジックのまま：sets/vals 構築）
-    // newPassword が来たら toSha256Hex() で保存、view_policy は一旦変更可だが
-    // まだフロントは public_password 想定なので、後段階で活用
-    // （略）
+    const { title, content, editPolicy, newPassword } = req.body;
+    const sets = [];
+    const vals = [];
+    let i = 1;
+
+    if (title   != null) { sets.push(`title = $${i++}`);       vals.push(title); }
+    if (content != null) { sets.push(`content = $${i++}`);     vals.push(content); }
+    if (editPolicy != null) {
+      const mutSet = new Set(["none","owner","friends","password"]);
+      const ep = mutSet.has(editPolicy) ? editPolicy : current.edit_policy;
+      sets.push(`edit_policy = $${i++}`);   vals.push(ep);
+      sets.push(`delete_policy = $${i++}`); vals.push(ep);
+    }
+    if (newPassword != null && /^[0-9a-f]{64}$/i.test(newPassword)) {
+      sets.push(`post_password_hash = $${i++}`);
+      vals.push(newPassword.toLowerCase());
+    }
+
+    if (sets.length === 0) return res.status(400).json({ status: "error", message: "Nothing to update" });
+
+    vals.push(id);
+    await pool.query(`UPDATE posts SET ${sets.join(", ")} WHERE id = $${i}`, vals);
+    return res.json({ status: "ok" });
   })
 );
 

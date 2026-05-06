@@ -24,7 +24,7 @@ export default function EditPostPage() {
 
   const oldHash = useMemo(() => {
     if (typeof window === "undefined") return "";
-    return aid ? sessionStorage.getItem(`view:${aid}`) || sessionStorage.getItem(`view:post:${aid}`) || "" : "";
+    return aid ? sessionStorage.getItem(`view:post:${aid}`) || sessionStorage.getItem(`view:${aid}`) || "" : "";
   }, [aid]);
 
   const postId = useMemo(() => (aid ? String(aid).trim() : ""), [aid]);
