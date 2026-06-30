@@ -1,6 +1,6 @@
 // src/lib/api.js
 
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE;
+const API_BASE = process.env.NEXT_PUBLIC_API_BASE ?? "";
 
 async function api(path, options = {}) {
   const res = await fetch(`${API_BASE}${path}`, {

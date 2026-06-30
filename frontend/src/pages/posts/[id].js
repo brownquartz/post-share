@@ -137,6 +137,7 @@ export default function PostDetail() {
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.message || `Comment failed (${res.status})`);
       setCommentText("");
+      setCommentName("");
       try {
         const res2 = await fetch(`${API_BASE}/api/posts/${id}/comments${qs ? `?${qs}` : ""}`, { credentials: "include" });
         const list = await res2.json().catch(() => []);
@@ -157,14 +158,14 @@ export default function PostDetail() {
             <button
               type="button"
               onClick={() => {
-                navigator.clipboard.writeText(postId);
+                navigator.clipboard.writeText(window.location.href);
                 setCopied(true);
                 setTimeout(() => setCopied(false), 2000);
               }}
               className="btn-ghost btn-sm"
-              title="Post IDをコピー"
+              title="URLをコピー"
             >
-              {copied ? "✓ コピー済み" : `ID: ${postId}`}
+              {copied ? "✓ コピー済み" : "URLをコピー"}
             </button>
           )}
           {user && postPkId ? (

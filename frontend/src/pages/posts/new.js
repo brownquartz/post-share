@@ -6,7 +6,7 @@ import CryptoJS from "crypto-js";
 import { API_BASE } from "../../lib/apiBase";
 import { useAuth } from "../../context/AuthContext";
 
-const ReactQuill = dynamic(() => import("react-quill"), { ssr: false });
+const ReactQuill = dynamic(() => import("react-quill-new"), { ssr: false });
 
 function sha256Hex(str) {
   return CryptoJS.SHA256(str).toString();
@@ -25,9 +25,21 @@ export default function NewPostPage() {
   const [viewPolicy, setViewPolicy] = useState("public_open");
   const [viewPassword, setViewPassword] = useState("");
   const [showPw, setShowPw] = useState(false);
-  const [editPolicy, setEditPolicy] = useState(user ? "owner" : "none");
+  const [editPolicy, setEditPolicy] = useState("none");
   const [commentCreatePolicy, setCommentCreatePolicy] = useState("anyone");
-  const [commentModeratePolicy, setCommentModeratePolicy] = useState("owner");
+  const [commentModeratePolicy, setCommentModeratePolicy] = useState("none");
+
+  // ログイン状態が確定したらデフォルト値を更新
+  useEffect(() => {
+    if (!authReady) return;
+    if (user) {
+      setEditPolicy("owner");
+      setCommentModeratePolicy("owner");
+    } else {
+      setEditPolicy("none");
+      setCommentModeratePolicy("none");
+    }
+  }, [authReady, user]);
 
   useEffect(() => {
     if (viewPolicy === "owner") {

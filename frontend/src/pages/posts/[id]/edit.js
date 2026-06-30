@@ -6,7 +6,7 @@ import CryptoJS from "crypto-js";
 import { API_BASE } from "../../../lib/apiBase";
 import { useAuth } from "../../../context/AuthContext";
 
-const ReactQuill = dynamic(() => import("react-quill"), { ssr: false });
+const ReactQuill = dynamic(() => import("react-quill-new"), { ssr: false });
 
 export default function EditPostPage() {
   const router = useRouter();

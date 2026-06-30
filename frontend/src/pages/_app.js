@@ -3,7 +3,7 @@ import React, { useEffect, useState } from 'react';
 import Head from 'next/head';
 import { AuthProvider } from '../context/AuthContext';
 import '../styles/global.css';
-import 'react-quill/dist/quill.snow.css';
+import 'react-quill-new/dist/quill.snow.css';
 import Layout from '../components/Layout';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE;
