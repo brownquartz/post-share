@@ -35,9 +35,22 @@ export default function PostDetail() {
   const postPkId = useMemo(() => (id ? Number(id) : null), [id]);
   const { favorited, setByToggle } = useFavoriteStatus(postPkId);
 
-  const hashedPassword = useMemo(() => {
-    if (typeof window === "undefined" || !aid) return "";
-    return sessionStorage.getItem(`view:post:${aid}`) || sessionStorage.getItem(`view:${aid}`) || "";
+  const [hashedPassword, setHashedPassword] = useState("");
+  const [passwordReady, setPasswordReady] = useState(false);
+
+  // URLハッシュ（#以降）にパスワードハッシュが含まれていればsessionStorageに保存して使う
+  useEffect(() => {
+    if (!aid) return;
+    const hashFromUrl = window.location.hash.replace(/^#/, "");
+    if (hashFromUrl) {
+      sessionStorage.setItem(`view:post:${aid}`, hashFromUrl);
+      sessionStorage.setItem(`view:${aid}`, hashFromUrl);
+      setHashedPassword(hashFromUrl);
+    } else {
+      const stored = sessionStorage.getItem(`view:post:${aid}`) || sessionStorage.getItem(`view:${aid}`) || "";
+      setHashedPassword(stored);
+    }
+    setPasswordReady(true);
   }, [aid]);
 
   const postId = useMemo(() => (aid ? String(aid).trim() : ""), [aid]);
@@ -53,7 +66,7 @@ export default function PostDetail() {
   }, [postId, hashedPassword]);
 
   useEffect(() => {
-    if (!id || !aid) return;
+    if (!id || !aid || !passwordReady) return;
 
     async function loadComments() {
       setCommentsLoading(true); setCommentError("");
@@ -102,7 +115,7 @@ export default function PostDetail() {
     }
 
     load();
-  }, [id, aid, user, hashedPassword, buildAuthQS]);
+  }, [id, aid, user, hashedPassword, buildAuthQS, passwordReady]);
 
   useEffect(() => {
     if (postViewPolicy === "owner" && !user) {
@@ -158,7 +171,9 @@ export default function PostDetail() {
             <button
               type="button"
               onClick={() => {
-                navigator.clipboard.writeText(window.location.href);
+                const base = window.location.href.split("#")[0];
+                const hash = postViewPolicy === "public_password" && hashedPassword ? `#${hashedPassword}` : "";
+                navigator.clipboard.writeText(base + hash);
                 setCopied(true);
                 setTimeout(() => setCopied(false), 2000);
               }}
