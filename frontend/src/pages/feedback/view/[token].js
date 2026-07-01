@@ -9,7 +9,7 @@ const STATUS_STYLE = {
   '回答済み':'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400',
 };
 
-export default function FeedbackViewPage() {
+export default function ContactViewPage() {
   const router = useRouter();
   const { token } = router.query;
   const [item, setItem] = useState(null);
@@ -33,7 +33,7 @@ export default function FeedbackViewPage() {
 
   return (
     <main className="max-w-lg mx-auto px-5 py-16 space-y-6">
-      <h1 className="text-2xl font-bold text-primary">回答状況</h1>
+      <h1 className="text-2xl font-bold text-primary">応答状況</h1>
 
       <div className="card p-5 space-y-3">
         <div className="flex items-center justify-between">
@@ -42,8 +42,14 @@ export default function FeedbackViewPage() {
             {item.status}
           </span>
         </div>
+        {item.title && (
+          <div>
+            <p className="text-xs text-muted mb-1">タイトル</p>
+            <p className="text-primary font-semibold text-sm">{item.title}</p>
+          </div>
+        )}
         <div>
-          <p className="text-xs text-muted mb-1">送信した内容</p>
+          <p className="text-xs text-muted mb-1">お問い合わせ内容</p>
           <p className="text-secondary text-sm whitespace-pre-wrap">{item.message}</p>
         </div>
       </div>

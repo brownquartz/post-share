@@ -4,21 +4,24 @@ const db = require('../db');
 
 // POST /api/feedback — 匿名OK、送信後に view_token を返す
 router.post('/', async (req, res) => {
+  const title   = (req.body.title   || '').trim();
   const message = (req.body.message || '').trim();
+  const email   = (req.body.email   || '').trim() || null;
+  if (!title)   return res.status(400).json({ message: 'title is required' });
   if (!message) return res.status(400).json({ message: 'message is required' });
 
   const { rows } = await db.query(
-    `INSERT INTO feedback (message) VALUES ($1)
+    `INSERT INTO feedback (title, message, email) VALUES ($1, $2, $3)
      RETURNING id, view_token AS "viewToken"`,
-    [message]
+    [title, message, email]
   );
   res.status(201).json({ ok: true, id: rows[0].id, viewToken: rows[0].viewToken });
 });
 
-// GET /api/feedback/view/:token — 送信者が自分の意見を確認
+// GET /api/feedback/view/:token — 送信者が自分のお問い合わせを確認
 router.get('/view/:token', async (req, res) => {
   const { rows } = await db.query(
-    `SELECT id, message, status, reply, replied_at AS "repliedAt", created_at AS "createdAt"
+    `SELECT id, title, message, email, status, reply, replied_at AS "repliedAt", created_at AS "createdAt"
        FROM feedback WHERE view_token = $1`,
     [req.params.token]
   );
@@ -36,7 +39,7 @@ function requireAdmin(req, res, next) {
 // GET /api/feedback — 管理者のみ
 router.get('/', requireAdmin, async (req, res) => {
   const { rows } = await db.query(
-    `SELECT id, message, status, reply, replied_at AS "repliedAt", created_at AS "createdAt"
+    `SELECT id, title, message, email, status, reply, replied_at AS "repliedAt", created_at AS "createdAt"
        FROM feedback ORDER BY created_at DESC LIMIT 500`
   );
   res.json({ items: rows });

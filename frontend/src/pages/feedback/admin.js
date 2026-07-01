@@ -42,7 +42,11 @@ function FeedbackItem({ item, onUpdated }) {
   return (
     <li className="card p-4 space-y-3">
       <div className="flex items-start justify-between gap-3">
-        <p className="text-secondary text-sm whitespace-pre-wrap flex-1">{item.message}</p>
+        <div className="flex-1 min-w-0">
+          {item.title && <p className="font-semibold text-primary text-sm mb-1">{item.title}</p>}
+          <p className="text-secondary text-sm whitespace-pre-wrap">{item.message}</p>
+          {item.email && <p className="text-xs text-muted mt-1">📧 {item.email}</p>}
+        </div>
         <span className={`shrink-0 text-xs font-semibold px-3 py-1 rounded-full ${STATUS_STYLE[item.status] || STATUS_STYLE['未回答']}`}>
           {item.status}
         </span>
@@ -134,9 +138,9 @@ export default function FeedbackAdminPage() {
 
   return (
     <>
-    <Head><title>意見箱 管理 | Post Share</title></Head>
+    <Head><title>お問い合わせ 管理 | Post Share</title></Head>
     <main className="max-w-2xl mx-auto px-5 py-12">
-      <h1 className="text-2xl font-bold text-primary mb-6">意見箱 — 管理</h1>
+      <h1 className="text-2xl font-bold text-primary mb-6">お問い合わせ — 管理</h1>
 
       {/* フィルター */}
       <div className="flex gap-2 flex-wrap mb-6">
