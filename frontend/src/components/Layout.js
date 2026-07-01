@@ -9,13 +9,22 @@ const ADMIN_USERNAME = 'park';
 function Drawer({ isOpen, onClose, user, authReady, signOut, toggleTheme, isDark }) {
   const { pathname } = useRouter();
   const isAdmin = !!user && user.username === ADMIN_USERNAME;
+  const [feedbackToken, setFeedbackToken] = React.useState('');
+
+  React.useEffect(() => {
+    try {
+      const token = localStorage.getItem('feedback:viewToken');
+      if (token) setFeedbackToken(token);
+    } catch {}
+  }, []);
 
   const navItems = [
     { href: '/', label: 'Home' },
     { href: '/posts/view', label: '検索' },
     { href: '/posts/new', label: '投稿' },
     { href: '/purpose', label: '目的' },
-    { href: '/feedback', label: '意見箱' },
+    { href: '/feedback', label: 'お問い合わせ' },
+    ...(feedbackToken ? [{ href: `/feedback/view/${feedbackToken}`, label: '応答状況' }] : []),
     ...(user ? [{ href: '/posts/view-all', label: 'My Posts' }] : []),
     ...(isAdmin ? [{ href: '/feedback/admin', label: '管理', admin: true }] : []),
   ];

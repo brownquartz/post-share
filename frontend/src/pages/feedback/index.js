@@ -14,7 +14,10 @@ export default function ContactPage() {
 
   async function handleSubmit(e) {
     e.preventDefault();
-    if (!title.trim() || !message.trim()) return;
+    if (!title.trim() && !message.trim()) {
+      setError('タイトルか内容のどちらかを入力してください');
+      return;
+    }
     setSubmitting(true); setError('');
     try {
       const res = await fetch(`${API_BASE}/api/feedback`, {
@@ -25,6 +28,7 @@ export default function ContactPage() {
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.message || `エラー (${res.status})`);
+      try { localStorage.setItem('feedback:viewToken', data.viewToken); } catch {}
       setViewToken(data.viewToken);
       setTitle(''); setMessage(''); setEmail('');
     } catch (e) {
@@ -73,23 +77,21 @@ export default function ContactPage() {
       </p>
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
-          <label className="label">タイトル <span className="text-error text-xs">*必須</span></label>
+          <label className="label">タイトル</label>
           <input
             className="input"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
-            placeholder="件名を入力してください"
-            required
+            placeholder="件名を入力してください（任意）"
           />
         </div>
         <div>
-          <label className="label">内容 <span className="text-error text-xs">*必須</span></label>
+          <label className="label">内容</label>
           <textarea
             className="input min-h-[140px] resize-y"
             value={message}
             onChange={(e) => setMessage(e.target.value)}
             placeholder="ここに書いてください…"
-            required
           />
         </div>
         <div>
