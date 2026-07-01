@@ -130,7 +130,7 @@ export default function EditPostPage() {
             <label className="label">編集・削除権限</label>
             <div className="flex flex-wrap gap-3">
               <label className="radio-label"><input type="radio" name="policy" value="none" checked={editPolicy === "none"} onChange={() => setEditPolicy("none")} /><span>なし</span></label>
-              <label className={user ? "radio-label" : "radio-dim"}><input type="radio" name="policy" value="owner" disabled={!user} checked={editPolicy === "owner"} onChange={() => setEditPolicy("owner")} /><span>オーナーのみ</span></label>
+              <label className={user ? "radio-label" : "radio-dim"}><input type="radio" name="policy" value="owner" disabled={!user} checked={editPolicy === "owner"} onChange={() => setEditPolicy("owner")} /><span>作成者のみ</span></label>
               {isPasswordPost && (
                 <label className="radio-label"><input type="radio" name="policy" value="password" checked={editPolicy === "password"} onChange={() => setEditPolicy("password")} /><span>パスワード保持者</span></label>
               )}

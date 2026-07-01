@@ -10,6 +10,12 @@ function stripHtml(html) { return html.replace(/<[^>]+>/g, ""); }
 function truncate(text, max = 60) { return text.length > max ? text.slice(0, max) + "…" : text; }
 function sha256Hex(str) { return CryptoJS.SHA256(str).toString(); }
 
+const POLICY_LABEL = {
+  public_open:     { label: '全員に公開',     cls: 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400' },
+  public_password: { label: 'パスワード保護', cls: 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400' },
+  owner:           { label: '作成者のみ',     cls: 'bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400' },
+};
+
 const HISTORY_KEY = "view:idHistory";
 const MAX_HISTORY = 5;
 
@@ -155,30 +161,40 @@ export default function ViewPosts() {
       )}
 
       <ul className="space-y-3">
-        {items.map((p) => (
-          <li key={p.id} className="card p-4 flex items-start justify-between gap-3">
-            <div className="min-w-0">
-              <Link
-                href={{ pathname: `/posts/${p.id}`, query: { aid: postId } }}
-                className="font-semibold text-brand hover:underline"
-              >
-                {p.title || `(タイトルなし #${p.id})`}
-              </Link>
-              <p className="text-secondary text-sm mt-1">{p.preview}</p>
-            </div>
-            <div className="flex gap-2 shrink-0">
-              {p.canEdit && (
-                <Link href={`/posts/${p.id}/edit?aid=${encodeURIComponent(postId)}`} className="btn-ghost btn-xs">編集</Link>
-              )}
-              <Link
-                href={{ pathname: `/posts/${p.id}`, query: { aid: postId } }}
-                className="btn-primary btn-xs"
-              >
-                開く
-              </Link>
-            </div>
-          </li>
-        ))}
+        {items.map((p) => {
+          const policy = POLICY_LABEL[p.viewPolicy];
+          return (
+            <li key={p.id} className="card p-4 flex items-start justify-between gap-3">
+              <div className="min-w-0">
+                <div className="flex items-center gap-2 flex-wrap mb-1">
+                  <Link
+                    href={{ pathname: `/posts/${p.id}`, query: { aid: postId } }}
+                    className="font-semibold text-brand hover:underline"
+                  >
+                    {p.title || `(タイトルなし #${p.id})`}
+                  </Link>
+                  {policy && (
+                    <span className={`text-xs font-semibold px-2 py-0.5 rounded-full shrink-0 ${policy.cls}`}>
+                      {policy.label}
+                    </span>
+                  )}
+                </div>
+                <p className="text-secondary text-sm">{p.preview}</p>
+              </div>
+              <div className="flex gap-2 shrink-0">
+                {p.canEdit && (
+                  <Link href={`/posts/${p.id}/edit?aid=${encodeURIComponent(postId)}`} className="btn-ghost btn-xs">編集</Link>
+                )}
+                <Link
+                  href={{ pathname: `/posts/${p.id}`, query: { aid: postId } }}
+                  className="btn-primary btn-xs"
+                >
+                  開く
+                </Link>
+              </div>
+            </li>
+          );
+        })}
       </ul>
     </main>
     </>

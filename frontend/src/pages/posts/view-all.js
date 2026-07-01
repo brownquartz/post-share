@@ -19,6 +19,13 @@ async function apiCall(path, options = {}) {
   return ct.includes('application/json') ? res.json() : res.text();
 }
 
+const POLICY_LABEL = {
+  public_open:     '全員に公開',
+  public_password: 'パスワード保護',
+  owner:           '作成者のみ',
+  locked:          'ロック',
+};
+
 async function sha256Hex(str) {
   const enc = new TextEncoder().encode(str);
   const buf = await crypto.subtle.digest('SHA-256', enc);
@@ -97,7 +104,7 @@ function PostCard({ item, isPendingDelete, onAdd, onTogglePending }) {
           {item.title || '(タイトルなし)'}
         </button>
         <div className="text-xs text-secondary mt-0.5">
-          {item.viewPolicy} · {new Date(item.createdAt).toLocaleString()}
+          {POLICY_LABEL[item.viewPolicy] || item.viewPolicy} · {new Date(item.createdAt).toLocaleString()}
         </div>
       </div>
       <div className="shrink-0">

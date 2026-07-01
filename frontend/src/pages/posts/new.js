@@ -45,9 +45,6 @@ export default function NewPostPage() {
     if (viewPolicy === "owner") {
       setEditPolicy("owner");
       setCommentCreatePolicy("owner"); setCommentModeratePolicy("owner");
-    } else if (viewPolicy === "locked") {
-      setEditPolicy("none");
-      setCommentCreatePolicy("none"); setCommentModeratePolicy("owner");
     }
   }, [viewPolicy]);
 
@@ -141,11 +138,7 @@ export default function NewPostPage() {
             </label>
             <label className={user ? "radio-label" : "radio-dim"}>
               <input type="radio" name="viewPolicy" value="owner" disabled={!user} checked={viewPolicy === "owner"} onChange={() => setViewPolicy("owner")} />
-              <span>オーナーのみ</span>
-            </label>
-            <label className="radio-label">
-              <input type="radio" name="viewPolicy" value="locked" checked={viewPolicy === "locked"} onChange={() => setViewPolicy("locked")} />
-              <span>ロック</span>
+              <span>作成者のみ</span>
             </label>
           </div>
 
@@ -188,7 +181,7 @@ export default function NewPostPage() {
                 </label>
                 <label className={user ? "radio-label" : "radio-dim"}>
                   <input type="radio" name="editPolicy" value="owner" disabled={!user} checked={editPolicy === "owner"} onChange={() => setEditPolicy("owner")} />
-                  <span>オーナー</span>
+                  <span>作成者</span>
                 </label>
               </div>
               <p className="text-xs text-muted mt-1">削除権限は編集権限と同じです</p>
@@ -206,7 +199,7 @@ export default function NewPostPage() {
                 </label>
                 <label className={user ? "radio-label" : "radio-dim"}>
                   <input type="radio" name="commentCreatePolicy" value="owner" disabled={!user} checked={commentCreatePolicy === "owner"} onChange={() => setCommentCreatePolicy("owner")} />
-                  <span>オーナー</span>
+                  <span>作成者</span>
                 </label>
               </div>
             </div>
