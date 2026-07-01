@@ -3,6 +3,7 @@ import Head from "next/head";
 import { useRouter } from "next/router";
 import { useEffect, useMemo, useState, useCallback } from "react";
 import CryptoJS from "crypto-js";
+import DOMPurify from "dompurify";
 import Link from "next/link";
 import { API_BASE } from "../../lib/apiBase";
 import { useAuth } from "../../context/AuthContext";
@@ -100,9 +101,9 @@ export default function PostDetail() {
             const bytes = CryptoJS.AES.decrypt(post.content, hashedPassword);
             const html = bytes.toString(CryptoJS.enc.Utf8);
             if (!html) { setError("復号に失敗しました（パスワードを確認）"); setContent(""); }
-            else { setContent(html); }
+            else { setContent(DOMPurify.sanitize(html)); }
           }
-        } else { setContent(post.content || ""); }
+        } else { setContent(DOMPurify.sanitize(post.content || "")); }
         const ownerUserId = post.ownerUserId ?? post.userId;
         const isOwner = !!user && ownerUserId != null && Number(user.id) === Number(ownerUserId);
         const isAnyoneAuthed = post.editPolicy === "anyone" && !!postId && !!hashedPassword && String(post.postId) === String(postId);

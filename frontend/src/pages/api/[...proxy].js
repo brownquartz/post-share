@@ -7,6 +7,9 @@ export const config = { api: { bodyParser: true } };
 const BACKEND = 'http://localhost:4000';
 
 export default async function handler(req, res) {
+  if (process.env.NODE_ENV === 'production') {
+    return res.status(404).json({ error: 'Not found' });
+  }
   const segments = [].concat(req.query.proxy || []).join('/');
 
   // Rebuild query string (excluding the proxy param itself)

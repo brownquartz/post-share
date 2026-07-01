@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/router';
 import CryptoJS from 'crypto-js';
+import DOMPurify from 'dompurify';
 
 function useQuery() {
   return new URLSearchParams(useRouter().asPath);
@@ -89,7 +90,7 @@ export default function PostsList() {
             </div>
             <div
               className="prose max-w-none"
-              dangerouslySetInnerHTML={{ __html: decrypt(post.content) }}
+              dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(decrypt(post.content)) }}
             />
           </div>
         ))}
