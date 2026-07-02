@@ -35,36 +35,43 @@ export default function ContactViewPage() {
     <main className="max-w-lg mx-auto px-5 py-16 space-y-6">
       <h1 className="text-2xl font-bold text-primary">応答状況</h1>
 
-      <div className="card p-5 space-y-3">
+      <div className="card p-5 space-y-4">
         <div className="flex items-center justify-between">
           <span className="text-xs text-muted">{new Date(item.createdAt).toLocaleString()}</span>
           <span className={`text-xs font-semibold px-3 py-1 rounded-full ${statusStyle}`}>
             {item.status}
           </span>
         </div>
-        {item.title && (
-          <div>
-            <p className="text-xs text-muted mb-1">タイトル</p>
-            <p className="text-primary font-semibold text-sm">{item.title}</p>
-          </div>
-        )}
-        <div>
-          <p className="text-xs text-muted mb-1">お問い合わせ内容</p>
-          <p className="text-secondary text-sm whitespace-pre-wrap">{item.message}</p>
-        </div>
-      </div>
 
-      {item.reply ? (
-        <div className="card p-5 space-y-2 border-brand/30">
-          <p className="text-xs font-semibold text-brand">回答</p>
-          <p className="text-secondary text-sm whitespace-pre-wrap">{item.reply}</p>
-          {item.repliedAt && (
-            <p className="text-xs text-muted">{new Date(item.repliedAt).toLocaleString()}</p>
+        {/* 送信内容 */}
+        <div className="space-y-1.5">
+          {item.title && (
+            <p className="text-base font-semibold text-primary">{item.title}</p>
+          )}
+          {item.message && (
+            <p className="text-secondary text-sm whitespace-pre-wrap">{item.message}</p>
           )}
         </div>
-      ) : (
-        <p className="text-secondary text-sm text-center">まだ回答はありません</p>
-      )}
+
+        {/* 回答 */}
+        {item.reply ? (
+          <>
+            <div className="border-t border-gray-200 dark:border-gray-700" />
+            <div className="space-y-1.5">
+              <p className="text-xs font-semibold text-brand">回答</p>
+              <p className="text-secondary text-sm whitespace-pre-wrap">{item.reply}</p>
+              {item.repliedAt && (
+                <p className="text-xs text-muted">{new Date(item.repliedAt).toLocaleString()}</p>
+              )}
+            </div>
+          </>
+        ) : (
+          <>
+            <div className="border-t border-gray-200 dark:border-gray-700" />
+            <p className="text-secondary text-sm">まだ回答はありません</p>
+          </>
+        )}
+      </div>
     </main>
   );
 }
