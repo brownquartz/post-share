@@ -17,8 +17,7 @@ function NotificationsPanel({ onClose }) {
       const res = await fetch(`${API_BASE}/api/notifications`, { credentials: 'include' });
       if (!res.ok) return;
       const data = await res.json();
-      // friend系は友だちパネルで管理するため除外
-      setItems((data.items || []).filter(i => i.type === 'comment'));
+      setItems(data.items || []);
       // 既読にする
       fetch(`${API_BASE}/api/notifications/read`, { method: 'PUT', credentials: 'include' }).catch(() => {});
     } catch {}
@@ -28,7 +27,9 @@ function NotificationsPanel({ onClose }) {
   useEffect(() => { load(); }, [load]);
 
   const TYPE_LABEL = {
-    comment: 'コメントが届きました',
+    comment:          'コメントが届きました',
+    friend_request:   '友だち申請が届きました',
+    friend_accepted:  '友だち申請が承認されました',
   };
 
   return (
@@ -51,10 +52,10 @@ function NotificationsPanel({ onClose }) {
             {items.map(item => (
               <li key={item.id} className={`px-5 py-3 ${!item.isRead ? 'bg-blue-950/30' : ''}`}>
                 <p className="text-sm text-gray-200">{TYPE_LABEL[item.type] || item.type}</p>
-                {item.data?.commenterName && (
+                {item.type === 'comment' && item.data?.commenterName && (
                   <p className="text-xs text-gray-400 mt-0.5">{item.data.commenterName} さんがコメントしました</p>
                 )}
-                {item.data?.postId && (
+                {item.type === 'comment' && item.data?.postId && (
                   <Link
                     href={`/posts/${item.data.postId}?aid=${encodeURIComponent(item.data.postTitle || '')}`}
                     onClick={onClose}
@@ -62,6 +63,12 @@ function NotificationsPanel({ onClose }) {
                   >
                     投稿を見る →
                   </Link>
+                )}
+                {item.type === 'friend_request' && item.data?.fromUsername && (
+                  <p className="text-xs text-gray-400 mt-0.5">{item.data.fromUsername} さんから</p>
+                )}
+                {item.type === 'friend_accepted' && item.data?.byUsername && (
+                  <p className="text-xs text-gray-400 mt-0.5">{item.data.byUsername} さんが承認しました</p>
                 )}
                 <p className="text-xs text-gray-600 mt-1">{new Date(item.createdAt).toLocaleString('ja-JP')}</p>
               </li>
@@ -322,7 +329,7 @@ export default function Layout({ children, toggleTheme, isDark }) {
         const res = await fetch(`${API_BASE}/api/notifications`, { credentials: 'include' });
         if (res.ok) {
           const d = await res.json();
-          const count = (d.items || []).filter(i => i.type === 'comment' && !i.isRead).length;
+          const count = (d.items || []).filter(i => !i.isRead).length;
           setUnreadCount(count);
         }
       } catch {}

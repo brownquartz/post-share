@@ -155,8 +155,6 @@ router.get('/feed', requireAuth, async (req, res) => {
        )
        WHERE f.status = 'accepted'
          AND p.view_policy IN ('public_open', 'friends')
-         AND p.post_id = u.username
-         AND p.owner_user_id = u.id
          AND (p.expires_at IS NULL OR p.expires_at > NOW())
        ORDER BY p.created_at DESC
        LIMIT 50`,
