@@ -15,7 +15,8 @@ function getFlags(req, post, opts = {}) {
 
   const hasPassword = !!postIdQ && !!hashQ && postIdCol === postIdQ && hashCol === hashQ;
 
-  const isFriend = false; // TODO: friendships
+  const friendIds = Array.isArray(opts.friendIds) ? opts.friendIds.map(Number) : [];
+  const isFriend = userId != null && friendIds.includes(Number(post.owner_user_id));
 
   return { isOwner, isFriend, hasPassword, userId };
 }

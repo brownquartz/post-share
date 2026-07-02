@@ -11,6 +11,8 @@ const authRouter = require("./routes/auth.js");
 const postsRouter = require("./routes/posts.js");
 const favoritesRouter = require('./routes/favorites');
 const feedbackRouter = require('./routes/feedback');
+const friendsRouter = require('./routes/friends');
+const notificationsRouter = require('./routes/notifications');
 
 
 const app = express();
@@ -92,6 +94,8 @@ app.use("/api/auth", authRouter);
 app.use("/api/posts", postsRouter);
 app.use('/api/favorites', favoritesRouter);
 app.use('/api/feedback', feedbackRouter);
+app.use('/api/friends', friendsRouter);
+app.use('/api/notifications', notificationsRouter);
 
 // --- 404 for API ---
 app.use("/api/*", (_req, res) =>

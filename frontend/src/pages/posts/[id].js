@@ -26,6 +26,9 @@ export default function PostDetail() {
   const [canComment, setCanComment] = useState(true);
   const [deleting, setDeleting] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [ownerUsername, setOwnerUsername] = useState("");
+  const [friendStatus, setFriendStatus] = useState(null); // null | 'self' | 'none' | 'pending_sent' | 'pending_received' | 'accepted'
+  const [friendReqBusy, setFriendReqBusy] = useState(false);
   const [comments, setComments] = useState([]);
   const [commentsLoading, setCommentsLoading] = useState(false);
   const [commentText, setCommentText] = useState("");
@@ -110,6 +113,16 @@ export default function PostDetail() {
         setCanEdit(post.canEdit ?? (isOwner || isAnyoneAuthed));
         setCanDelete(post.canDelete ?? post.canEdit ?? (isOwner || isAnyoneAuthed));
         setCanComment(post.canComment ?? true);
+        // 投稿者のusernameを保存し友だち状態を取得
+        if (post.postId) {
+          setOwnerUsername(post.postId);
+          if (user) {
+            fetch(`${API_BASE}/api/friends/status/${encodeURIComponent(post.postId)}`, { credentials: 'include' })
+              .then(r => r.ok ? r.json() : null)
+              .then(d => { if (d) setFriendStatus(d.status); })
+              .catch(() => {});
+          }
+        }
         await loadComments();
       } catch (e) { setError(e?.message || "Error"); setContent(""); setTitle(""); }
       finally { setLoading(false); }
@@ -138,6 +151,22 @@ export default function PostDetail() {
       router.push("/posts/view-all");
     } catch (err) { alert(err.message || "Delete failed"); }
     finally { setDeleting(false); }
+  }
+
+  async function handleFriendRequest() {
+    if (!ownerUsername || friendReqBusy) return;
+    setFriendReqBusy(true);
+    try {
+      const res = await fetch(`${API_BASE}/api/friends/request`, {
+        method: 'POST', credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username: ownerUsername }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok) setFriendStatus('pending_sent');
+      else alert(data.message || 'エラーが発生しました');
+    } catch { alert('エラーが発生しました'); }
+    finally { setFriendReqBusy(false); }
   }
 
   async function handleSubmitComment(e) {
@@ -201,6 +230,17 @@ export default function PostDetail() {
               <button type="button" onClick={() => exportTxt(title, content)} className="btn-ghost btn-sm">TXT</button>
               <button type="button" onClick={() => exportDocx(title, content)} className="btn-ghost btn-sm">Word</button>
             </>
+          )}
+          {user && ownerUsername && friendStatus === 'none' && (
+            <button type="button" onClick={handleFriendRequest} disabled={friendReqBusy} className="btn-ghost btn-sm disabled:opacity-60">
+              {friendReqBusy ? '送信中…' : '友だち申請'}
+            </button>
+          )}
+          {user && friendStatus === 'pending_sent' && (
+            <span className="text-xs text-muted px-2">申請中</span>
+          )}
+          {user && friendStatus === 'accepted' && (
+            <span className="text-xs text-green-500 px-2">友だち</span>
           )}
           <button
             type="button"

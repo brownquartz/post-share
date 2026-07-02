@@ -22,6 +22,7 @@ async function apiCall(path, options = {}) {
 const POLICY_LABEL = {
   public_open:     '全員に公開',
   public_password: 'パスワード保護',
+  friends:         '友だちのみ',
   owner:           '作成者のみ',
   locked:          'ロック',
 };

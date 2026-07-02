@@ -34,10 +34,23 @@ router.get(
       [postId]
     );
 
+    // 友だちIDリストを取得（ログイン時のみ）
+    let friendIds = [];
+    if (req.user) {
+      try {
+        const { rows: fRows } = await pool.query(
+          `SELECT CASE WHEN from_user_id = $1 THEN to_user_id ELSE from_user_id END AS id
+           FROM friendships WHERE (from_user_id = $1 OR to_user_id = $1) AND status = 'accepted'`,
+          [req.user.id]
+        );
+        friendIds = fRows.map(r => Number(r.id));
+      } catch {}
+    }
+
     // flags を計算して canView でサーバ側もフィルタ
     const out = [];
     for (const r of rows) {
-      const flags = getFlags(req, r, { postId, postPassword:password });
+      const flags = getFlags(req, r, { postId, postPassword: password, friendIds });
       if (!canView(r, flags)) continue;
 
       out.push({
@@ -129,7 +142,20 @@ router.get(
     if (q.rowCount === 0) return res.status(404).json({ status: "error", message: "Not found" });
 
     const p = q.rows[0];
-    const flags = getFlags(req, p, { postId, postPassword:password });
+
+    let friendIds = [];
+    if (req.user) {
+      try {
+        const { rows: fRows } = await pool.query(
+          `SELECT CASE WHEN from_user_id = $1 THEN to_user_id ELSE from_user_id END AS id
+           FROM friendships WHERE (from_user_id = $1 OR to_user_id = $1) AND status = 'accepted'`,
+          [req.user.id]
+        );
+        friendIds = fRows.map(r => Number(r.id));
+      } catch {}
+    }
+
+    const flags = getFlags(req, p, { postId, postPassword: password, friendIds });
 
     if (!canView(p, flags)) {
       return res.status(401).json({ status: "error", message: "Unauthorized" });

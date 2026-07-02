@@ -137,6 +137,10 @@ export default function NewPostPage() {
               <span>パスワード保護</span>
             </label>
             <label className={user ? "radio-label" : "radio-dim"}>
+              <input type="radio" name="viewPolicy" value="friends" disabled={!user} checked={viewPolicy === "friends"} onChange={() => setViewPolicy("friends")} />
+              <span>友だちのみ</span>
+            </label>
+            <label className={user ? "radio-label" : "radio-dim"}>
               <input type="radio" name="viewPolicy" value="owner" disabled={!user} checked={viewPolicy === "owner"} onChange={() => setViewPolicy("owner")} />
               <span>作成者のみ</span>
             </label>

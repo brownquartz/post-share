@@ -13,6 +13,7 @@ function sha256Hex(str) { return CryptoJS.SHA256(str).toString(); }
 const POLICY_LABEL = {
   public_open:     { label: '全員に公開',     cls: 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400' },
   public_password: { label: 'パスワード保護', cls: 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400' },
+  friends:         { label: '友だちのみ',     cls: 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400' },
   owner:           { label: '作成者のみ',     cls: 'bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400' },
 };
 
