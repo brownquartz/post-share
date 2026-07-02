@@ -24,6 +24,7 @@ export default function PostDetail() {
   const [canEdit, setCanEdit] = useState(false);
   const [canDelete, setCanDelete] = useState(false);
   const [canComment, setCanComment] = useState(true);
+  const [createdAt, setCreatedAt] = useState("");
   const [deleting, setDeleting] = useState(false);
   const [copied, setCopied] = useState(false);
   const [ownerUsername, setOwnerUsername] = useState("");
@@ -113,6 +114,7 @@ export default function PostDetail() {
         setCanEdit(post.canEdit ?? (isOwner || isAnyoneAuthed));
         setCanDelete(post.canDelete ?? post.canEdit ?? (isOwner || isAnyoneAuthed));
         setCanComment(post.canComment ?? true);
+        if (post.createdAt) setCreatedAt(post.createdAt);
         // 投稿者のusernameを保存し友だち状態を取得
         if (post.postId) {
           setOwnerUsername(post.postId);
@@ -252,6 +254,10 @@ export default function PostDetail() {
           >戻る</button>
         </div>
       </div>
+
+      {createdAt && (
+        <p className="text-xs text-muted mt-1">{new Date(createdAt).toLocaleString('ja-JP')}</p>
+      )}
 
       {loading && <p className="mt-6 text-secondary text-sm">読み込み中…</p>}
       {error   && <p className="mt-6 text-error">{error}</p>}

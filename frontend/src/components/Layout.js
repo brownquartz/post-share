@@ -14,8 +14,11 @@ const TYPE_LABEL = {
 };
 
 // ========== 通知パネル ==========
-function NotificationsPanel({ items, onClose, onMarkRead }) {
+// friend_request は友だちパネル側で通知するため除外
+function NotificationsPanel({ items, onClose, onMarkRead, onDelete }) {
   useEffect(() => { onMarkRead(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const filtered = items.filter(i => i.type !== 'friend_request');
 
   return (
     <div className="flex flex-col h-full">
@@ -28,32 +31,39 @@ function NotificationsPanel({ items, onClose, onMarkRead }) {
         </button>
       </div>
       <div className="flex-1 overflow-y-auto py-2">
-        {items.length === 0 ? (
+        {filtered.length === 0 ? (
           <p className="px-5 py-4 text-sm text-gray-400">お知らせはありません</p>
         ) : (
           <ul className="divide-y divide-gray-800">
-            {items.map(item => (
-              <li key={item.id} className={`px-5 py-3 ${!item.isRead ? 'bg-blue-950/30' : ''}`}>
-                <p className="text-sm text-gray-200">{TYPE_LABEL[item.type] || item.type}</p>
-                {item.type === 'comment' && item.data?.commenterName && (
-                  <p className="text-xs text-gray-400 mt-0.5">{item.data.commenterName} さんがコメントしました</p>
-                )}
-                {item.type === 'comment' && item.data?.postId && (
-                  <Link
-                    href={`/posts/${item.data.postId}?aid=${encodeURIComponent(item.data.postTitle || '')}`}
-                    onClick={onClose}
-                    className="text-xs text-blue-400 hover:underline mt-0.5 block"
-                  >
-                    投稿を見る →
-                  </Link>
-                )}
-                {item.type === 'friend_request' && item.data?.fromUsername && (
-                  <p className="text-xs text-gray-400 mt-0.5">{item.data.fromUsername} さんから</p>
-                )}
-                {item.type === 'friend_accepted' && item.data?.byUsername && (
-                  <p className="text-xs text-gray-400 mt-0.5">{item.data.byUsername} さんが承認しました</p>
-                )}
-                <p className="text-xs text-gray-600 mt-1">{new Date(item.createdAt).toLocaleString('ja-JP')}</p>
+            {filtered.map(item => (
+              <li key={item.id} className={`px-5 py-3 flex gap-2 ${!item.isRead ? 'bg-blue-950/30' : ''}`}>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm text-gray-200">{TYPE_LABEL[item.type] || item.type}</p>
+                  {item.type === 'comment' && item.data?.commenterName && (
+                    <p className="text-xs text-gray-400 mt-0.5">{item.data.commenterName} さんがコメントしました</p>
+                  )}
+                  {item.type === 'comment' && item.data?.postId && (
+                    <Link
+                      href={`/posts/${item.data.postId}?aid=${encodeURIComponent(item.data.postTitle || '')}`}
+                      onClick={onClose}
+                      className="text-xs text-blue-400 hover:underline mt-0.5 block"
+                    >
+                      投稿を見る →
+                    </Link>
+                  )}
+                  {item.type === 'friend_accepted' && item.data?.byUsername && (
+                    <p className="text-xs text-gray-400 mt-0.5">{item.data.byUsername} さんが承認しました</p>
+                  )}
+                  <p className="text-xs text-gray-600 mt-1">{new Date(item.createdAt).toLocaleString('ja-JP')}</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => onDelete(item.id)}
+                  className="shrink-0 w-6 h-6 flex items-center justify-center text-gray-600 hover:text-gray-300 transition-colors"
+                  aria-label="削除"
+                >
+                  ×
+                </button>
               </li>
             ))}
           </ul>
@@ -260,14 +270,14 @@ function Drawer({ isOpen, onClose, user, authReady, signOut, toggleTheme, isDark
 }
 
 // ========== 右スライドパネル ==========
-function RightPanel({ type, onClose, notifItems, friends, friendRequests, onMarkRead, onReloadFriends }) {
+function RightPanel({ type, onClose, notifItems, friends, friendRequests, onMarkRead, onReloadFriends, onDeleteNotif }) {
   if (!type) return null;
   return (
     <>
       <div className="fixed inset-0 z-30 bg-black/50" onClick={onClose} />
       <div className="fixed top-0 right-0 z-40 h-full w-80 bg-gray-900 border-l border-gray-700/60 flex flex-col">
         {type === 'notifications' && (
-          <NotificationsPanel items={notifItems} onClose={onClose} onMarkRead={onMarkRead} />
+          <NotificationsPanel items={notifItems} onClose={onClose} onMarkRead={onMarkRead} onDelete={onDeleteNotif} />
         )}
         {type === 'friends' && (
           <FriendsPanel friends={friends} requests={friendRequests} onClose={onClose} onReload={onReloadFriends} />
@@ -288,7 +298,11 @@ export default function Layout({ children, toggleTheme, isDark }) {
   const [friends, setFriends]             = useState([]);
   const [friendRequests, setFriendRequests] = useState([]);
 
-  const unreadCount = useMemo(() => notifItems.filter(i => !i.isRead).length, [notifItems]);
+  // friend_request はお知らせパネルに出さないので除外してカウント
+  const unreadCount = useMemo(
+    () => notifItems.filter(i => i.type !== 'friend_request' && !i.isRead).length,
+    [notifItems]
+  );
 
   // 通知のみ再取得（30秒ポーリング用）
   const reloadNotifs = useCallback(async () => {
@@ -338,6 +352,14 @@ export default function Layout({ children, toggleTheme, isDark }) {
     setNotifItems(prev => prev.map(i => ({ ...i, isRead: true })));
   }, []);
 
+  // 通知を個別削除
+  const handleDeleteNotif = useCallback(async (notifId) => {
+    try {
+      await fetch(`${API_BASE}/api/notifications/${notifId}`, { method: 'DELETE', credentials: 'include' });
+      setNotifItems(prev => prev.filter(i => i.id !== notifId));
+    } catch {}
+  }, []);
+
   function openPanel(type) {
     setRightPanel(prev => prev === type ? null : type);
   }
@@ -376,11 +398,16 @@ export default function Layout({ children, toggleTheme, isDark }) {
           {/* 友だちボタン */}
           {user && (
             <button type="button" onClick={() => openPanel('friends')}
-              className="w-9 h-9 flex items-center justify-center rounded-lg text-gray-400 hover:text-gray-200 hover:bg-gray-800 transition-colors cursor-pointer"
+              className="relative w-9 h-9 flex items-center justify-center rounded-lg text-gray-400 hover:text-gray-200 hover:bg-gray-800 transition-colors cursor-pointer"
               aria-label="友だち">
               <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 018.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0111.964-3.07M12 6.375a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zm8.25 2.25a2.625 2.625 0 11-5.25 0 2.625 2.625 0 015.25 0z" />
               </svg>
+              {friendRequests.length > 0 && (
+                <span className="absolute top-1 right-1 w-4 h-4 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center leading-none">
+                  {friendRequests.length > 9 ? '9+' : friendRequests.length}
+                </span>
+              )}
             </button>
           )}
 
@@ -405,6 +432,7 @@ export default function Layout({ children, toggleTheme, isDark }) {
         friendRequests={friendRequests}
         onMarkRead={handleMarkRead}
         onReloadFriends={reloadFriends}
+        onDeleteNotif={handleDeleteNotif}
       />
 
       <main className="flex-1">{children}</main>

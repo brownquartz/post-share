@@ -24,6 +24,21 @@ router.get('/', requireAuth, async (req, res) => {
   }
 });
 
+// 個別削除
+router.delete('/:id', requireAuth, async (req, res) => {
+  try {
+    const { rows } = await db.query(
+      `DELETE FROM notifications WHERE id = $1 AND user_id = $2 RETURNING id`,
+      [req.params.id, req.user.id]
+    );
+    if (rows.length === 0) return res.status(404).json({ message: 'Not found' });
+    res.json({ ok: true });
+  } catch (e) {
+    console.error('[DELETE /api/notifications/:id]', e);
+    res.status(500).json({ message: 'サーバーエラー' });
+  }
+});
+
 // 全て既読にする
 router.put('/read', requireAuth, async (req, res) => {
   try {
