@@ -14,7 +14,7 @@ import { exportTxt, exportDocx } from '../../lib/exportPost';
 export default function PostDetail() {
   const { user } = useAuth();
   const router = useRouter();
-  const { id, aid } = router.query;
+  const { id, aid, from } = router.query;
 
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
@@ -244,10 +244,10 @@ export default function PostDetail() {
           )}
           <button
             type="button"
-            onClick={() => postId
-              ? router.push(`/posts/view?restore=${encodeURIComponent(postId)}`)
-              : router.back()
-            }
+            onClick={() => {
+              if (from === 'friends') { router.push('/friends'); return; }
+              postId ? router.push(`/posts/view?restore=${encodeURIComponent(postId)}`) : router.back();
+            }}
             className="btn-ghost btn-sm"
           >戻る</button>
         </div>

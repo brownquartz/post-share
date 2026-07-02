@@ -54,12 +54,12 @@ export default function FriendsFeedPage() {
           {items.map(p => {
             const policy = POLICY_LABEL[p.viewPolicy];
             return (
-              <li key={p.id} className="card p-4 flex items-start justify-between gap-3">
+              <li key={p.id} className="card p-4">
                 <div className="min-w-0">
                   <div className="text-xs text-muted mb-1">{p.ownerUsername}</div>
                   <div className="flex items-center gap-2 flex-wrap">
                     <Link
-                      href={`/posts/${p.id}?aid=${encodeURIComponent(p.postId)}`}
+                      href={`/posts/${p.id}?aid=${encodeURIComponent(p.postId)}&from=friends`}
                       className="font-semibold text-brand hover:underline"
                     >
                       {p.title || `(タイトルなし #${p.id})`}
@@ -72,12 +72,6 @@ export default function FriendsFeedPage() {
                   </div>
                   <p className="text-xs text-muted mt-1">{new Date(p.createdAt).toLocaleDateString('ja-JP')}</p>
                 </div>
-                <Link
-                  href={`/posts/${p.id}?aid=${encodeURIComponent(p.postId)}`}
-                  className="btn-primary btn-xs shrink-0"
-                >
-                  開く
-                </Link>
               </li>
             );
           })}
