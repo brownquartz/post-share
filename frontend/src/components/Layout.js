@@ -13,8 +13,10 @@ function Drawer({ isOpen, onClose, user, authReady, signOut, toggleTheme, isDark
 
   React.useEffect(() => {
     try {
-      const token = localStorage.getItem('feedback:viewToken');
-      if (token) setFeedbackToken(token);
+      const tokens = JSON.parse(localStorage.getItem('feedback:tokens') || '[]');
+      if (tokens.length > 0) { setFeedbackToken('yes'); return; }
+      // 旧形式との互換性
+      if (localStorage.getItem('feedback:viewToken')) setFeedbackToken('yes');
     } catch {}
   }, []);
 
@@ -24,7 +26,7 @@ function Drawer({ isOpen, onClose, user, authReady, signOut, toggleTheme, isDark
     { href: '/posts/new', label: '投稿' },
     { href: '/purpose', label: '目的' },
     { href: '/feedback', label: 'お問い合わせ' },
-    ...(feedbackToken ? [{ href: `/feedback/view/${feedbackToken}`, label: '応答状況' }] : []),
+    ...(feedbackToken ? [{ href: '/feedback/view', label: '応答状況' }] : []),
     ...(user ? [{ href: '/posts/view-all', label: 'My Posts' }] : []),
     ...(isAdmin ? [{ href: '/feedback/admin', label: '管理', admin: true }] : []),
   ];

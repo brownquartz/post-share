@@ -28,7 +28,11 @@ export default function ContactPage() {
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.message || `エラー (${res.status})`);
-      try { localStorage.setItem('feedback:viewToken', data.viewToken); } catch {}
+      try {
+        const prev = JSON.parse(localStorage.getItem('feedback:tokens') || '[]');
+        if (!prev.includes(data.viewToken)) prev.unshift(data.viewToken);
+        localStorage.setItem('feedback:tokens', JSON.stringify(prev));
+      } catch {}
       setViewToken(data.viewToken);
       setTitle(''); setMessage(''); setEmail('');
     } catch (e) {
