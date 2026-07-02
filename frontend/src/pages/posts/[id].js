@@ -196,108 +196,121 @@ export default function PostDetail() {
     <>
     <Head><title>{title ? `${title} | Post Share` : 'Post Share'}</title></Head>
     <main className="page-wrap">
-      <div className="flex items-center justify-between gap-3 flex-wrap">
-        <h1 className="text-2xl font-bold text-primary flex-1 min-w-0 truncate">{title || `Post #${id}`}</h1>
-        <div className="flex items-center gap-2 shrink-0">
-          {postId && (
+
+      {/* ========== 投稿カード ========== */}
+      <div className="card p-6">
+        {/* タイトル行 */}
+        <div className="flex items-start justify-between gap-3 flex-wrap">
+          {/* 左：タイトル ＋ 友だちラベル */}
+          <div className="flex items-center gap-2 min-w-0 flex-1">
+            <h1 className="text-2xl font-bold text-primary truncate">{title || `Post #${id}`}</h1>
+            {user && friendStatus === 'accepted' && (
+              <span className="text-xs font-semibold text-green-500 bg-green-500/10 px-2 py-0.5 rounded-full shrink-0">友だち</span>
+            )}
+            {user && friendStatus === 'pending_sent' && (
+              <span className="text-xs text-muted shrink-0">申請中</span>
+            )}
+          </div>
+          {/* 右：ボタン群 */}
+          <div className="flex items-center gap-2 shrink-0 flex-wrap justify-end">
+            {postId && (
+              <button
+                type="button"
+                onClick={() => {
+                  const base = window.location.href.split("#")[0];
+                  const hash = postViewPolicy === "public_password" && hashedPassword ? `#${hashedPassword}` : "";
+                  navigator.clipboard.writeText(base + hash);
+                  setCopied(true);
+                  setTimeout(() => setCopied(false), 2000);
+                }}
+                className="btn-ghost btn-sm"
+                title="URLをコピー"
+              >
+                {copied ? "✓ コピー済み" : "URLをコピー"}
+              </button>
+            )}
+            {user && postPkId ? (
+              <FavoriteButton postPkId={postPkId} initialFavorited={favorited} onChanged={setByToggle} />
+            ) : null}
+            {canEdit && (
+              <Link href={`/posts/${id}/edit?aid=${encodeURIComponent(postId)}`} className="btn-ghost btn-sm">編集</Link>
+            )}
+            {canDelete && (
+              <button type="button" onClick={handleDelete} disabled={deleting} className="btn btn-danger hover-lift focus-ring btn-sm disabled:opacity-60">
+                {deleting ? "削除中…" : "削除"}
+              </button>
+            )}
+            {content && (
+              <>
+                <button type="button" onClick={() => window.print()} className="btn-ghost btn-sm">PDF</button>
+                <button type="button" onClick={() => exportTxt(title, content)} className="btn-ghost btn-sm">TXT</button>
+                <button type="button" onClick={() => exportDocx(title, content)} className="btn-ghost btn-sm">Word</button>
+              </>
+            )}
+            {user && ownerUsername && friendStatus === 'none' && (
+              <button type="button" onClick={handleFriendRequest} disabled={friendReqBusy} className="btn-ghost btn-sm disabled:opacity-60">
+                {friendReqBusy ? '送信中…' : '友だち申請'}
+              </button>
+            )}
             <button
               type="button"
               onClick={() => {
-                const base = window.location.href.split("#")[0];
-                const hash = postViewPolicy === "public_password" && hashedPassword ? `#${hashedPassword}` : "";
-                navigator.clipboard.writeText(base + hash);
-                setCopied(true);
-                setTimeout(() => setCopied(false), 2000);
+                if (from === 'friends') { router.push('/friends'); return; }
+                postId ? router.push(`/posts/view?restore=${encodeURIComponent(postId)}`) : router.back();
               }}
               className="btn-ghost btn-sm"
-              title="URLをコピー"
-            >
-              {copied ? "✓ コピー済み" : "URLをコピー"}
-            </button>
-          )}
-          {user && postPkId ? (
-            <FavoriteButton postPkId={postPkId} initialFavorited={favorited} onChanged={setByToggle} />
-          ) : null}
-          {canEdit && (
-            <Link href={`/posts/${id}/edit?aid=${encodeURIComponent(postId)}`} className="btn-ghost btn-sm">編集</Link>
-          )}
-          {canDelete && (
-            <button type="button" onClick={handleDelete} disabled={deleting} className="btn btn-danger hover-lift focus-ring btn-sm disabled:opacity-60">
-              {deleting ? "削除中…" : "削除"}
-            </button>
-          )}
-          {content && (
-            <>
-              <button type="button" onClick={() => window.print()} className="btn-ghost btn-sm">PDF</button>
-              <button type="button" onClick={() => exportTxt(title, content)} className="btn-ghost btn-sm">TXT</button>
-              <button type="button" onClick={() => exportDocx(title, content)} className="btn-ghost btn-sm">Word</button>
-            </>
-          )}
-          {user && ownerUsername && friendStatus === 'none' && (
-            <button type="button" onClick={handleFriendRequest} disabled={friendReqBusy} className="btn-ghost btn-sm disabled:opacity-60">
-              {friendReqBusy ? '送信中…' : '友だち申請'}
-            </button>
-          )}
-          {user && friendStatus === 'pending_sent' && (
-            <span className="text-xs text-muted px-2">申請中</span>
-          )}
-          {user && friendStatus === 'accepted' && (
-            <span className="text-xs text-green-500 px-2">友だち</span>
-          )}
-          <button
-            type="button"
-            onClick={() => {
-              if (from === 'friends') { router.push('/friends'); return; }
-              postId ? router.push(`/posts/view?restore=${encodeURIComponent(postId)}`) : router.back();
-            }}
-            className="btn-ghost btn-sm"
-          >戻る</button>
+            >戻る</button>
+          </div>
         </div>
+
+        {/* 日時 */}
+        {createdAt && (
+          <p className="text-xs text-muted mt-1">{new Date(createdAt).toLocaleString('ja-JP')}</p>
+        )}
+
+        {/* 本文 */}
+        {loading && <p className="mt-6 text-secondary text-sm">読み込み中…</p>}
+        {error   && <p className="mt-6 text-error">{error}</p>}
+        {content && <article className="mt-6 prose dark:prose-invert max-w-none" dangerouslySetInnerHTML={{ __html: content }} />}
       </div>
 
-      {createdAt && (
-        <p className="text-xs text-muted mt-1">{new Date(createdAt).toLocaleString('ja-JP')}</p>
-      )}
-
-      {loading && <p className="mt-6 text-secondary text-sm">読み込み中…</p>}
-      {error   && <p className="mt-6 text-error">{error}</p>}
-
-      {content && <article className="mt-6 prose dark:prose-invert max-w-none" dangerouslySetInnerHTML={{ __html: content }} />}
-
-      <section id="comments" className="mt-10">
-        <h2 className="text-lg font-semibold text-primary mb-3">コメント</h2>
-        {commentsLoading ? (
-          <p className="text-secondary text-sm">コメント読み込み中…</p>
-        ) : commentError ? (
-          <p className="text-error">{commentError}</p>
-        ) : (
-          <ul className="space-y-3">
-            {comments.length === 0 && <li className="text-secondary text-sm">コメントはまだありません</li>}
-            {comments.map((c) => (
-              <li key={c.id} className="card p-3">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium text-primary">{c.name || "匿名"}</span>
-                  <span className="text-xs text-muted">{c.createdAt ? new Date(c.createdAt).toLocaleString() : ""}</span>
-                </div>
-                <p className="mt-1 text-secondary text-sm whitespace-pre-wrap">{c.content}</p>
-              </li>
-            ))}
-          </ul>
-        )}
-        {canComment && (
-          <form onSubmit={handleSubmitComment} className="mt-4 space-y-2">
-            <label className="flex items-center gap-2 text-xs text-secondary">
-              <span>表示名</span>
-              <input className="input !py-1 !px-2 w-32" value={commentName} onChange={(e) => setCommentName(e.target.value)} placeholder="匿名" />
-            </label>
-            <div className="flex gap-2">
-              <input className="input flex-1" placeholder="コメントを入力…" value={commentText} onChange={(e) => setCommentText(e.target.value)} />
-              <button type="submit" className="btn-primary" disabled={commentSubmitting}>
-                {commentSubmitting ? "投稿中…" : "投稿"}
-              </button>
-            </div>
-          </form>
-        )}
+      {/* ========== コメント ========== */}
+      <section id="comments" className="mt-4">
+        <div className="card p-6">
+          <h2 className="text-lg font-semibold text-primary mb-3">コメント</h2>
+          {commentsLoading ? (
+            <p className="text-secondary text-sm">コメント読み込み中…</p>
+          ) : commentError ? (
+            <p className="text-error">{commentError}</p>
+          ) : (
+            <ul className="space-y-3">
+              {comments.length === 0 && <li className="text-secondary text-sm">コメントはまだありません</li>}
+              {comments.map((c) => (
+                <li key={c.id} className="border border-gray-200 dark:border-gray-700 rounded-xl p-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium text-primary">{c.name || "匿名"}</span>
+                    <span className="text-xs text-muted">{c.createdAt ? new Date(c.createdAt).toLocaleString() : ""}</span>
+                  </div>
+                  <p className="mt-1 text-secondary text-sm whitespace-pre-wrap">{c.content}</p>
+                </li>
+              ))}
+            </ul>
+          )}
+          {canComment && (
+            <form onSubmit={handleSubmitComment} className="mt-4 space-y-2">
+              <label className="flex items-center gap-2 text-xs text-secondary">
+                <span>表示名</span>
+                <input className="input !py-1 !px-2 w-32" value={commentName} onChange={(e) => setCommentName(e.target.value)} placeholder="匿名" />
+              </label>
+              <div className="flex gap-2">
+                <input className="input flex-1" placeholder="コメントを入力…" value={commentText} onChange={(e) => setCommentText(e.target.value)} />
+                <button type="submit" className="btn-primary" disabled={commentSubmitting}>
+                  {commentSubmitting ? "投稿中…" : "投稿"}
+                </button>
+              </div>
+            </form>
+          )}
+        </div>
       </section>
     </main>
     </>
