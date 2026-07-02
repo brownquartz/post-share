@@ -1,5 +1,5 @@
 // src/components/Layout.js
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
 import { useAuth } from '../context/AuthContext';
@@ -7,30 +7,15 @@ import { API_BASE } from '../lib/apiBase';
 
 const ADMIN_USERNAME = 'park';
 
+const TYPE_LABEL = {
+  comment:         'コメントが届きました',
+  friend_request:  '友だち申請が届きました',
+  friend_accepted: '友だち申請が承認されました',
+};
+
 // ========== 通知パネル ==========
-function NotificationsPanel({ onClose }) {
-  const [items, setItems] = useState([]);
-  const [loading, setLoading] = useState(true);
-
-  const load = useCallback(async () => {
-    try {
-      const res = await fetch(`${API_BASE}/api/notifications`, { credentials: 'include' });
-      if (!res.ok) return;
-      const data = await res.json();
-      setItems(data.items || []);
-      // 既読にする
-      fetch(`${API_BASE}/api/notifications/read`, { method: 'PUT', credentials: 'include' }).catch(() => {});
-    } catch {}
-    finally { setLoading(false); }
-  }, []);
-
-  useEffect(() => { load(); }, [load]);
-
-  const TYPE_LABEL = {
-    comment:          'コメントが届きました',
-    friend_request:   '友だち申請が届きました',
-    friend_accepted:  '友だち申請が承認されました',
-  };
+function NotificationsPanel({ items, onClose, onMarkRead }) {
+  useEffect(() => { onMarkRead(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <div className="flex flex-col h-full">
@@ -43,9 +28,7 @@ function NotificationsPanel({ onClose }) {
         </button>
       </div>
       <div className="flex-1 overflow-y-auto py-2">
-        {loading ? (
-          <p className="px-5 py-4 text-sm text-gray-400">読み込み中…</p>
-        ) : items.length === 0 ? (
+        {items.length === 0 ? (
           <p className="px-5 py-4 text-sm text-gray-400">お知らせはありません</p>
         ) : (
           <ul className="divide-y divide-gray-800">
@@ -81,28 +64,10 @@ function NotificationsPanel({ onClose }) {
 }
 
 // ========== 友だちパネル ==========
-function FriendsPanel({ onClose }) {
-  const [friends, setFriends] = useState([]);
-  const [requests, setRequests] = useState([]);
+function FriendsPanel({ friends, requests, onClose, onReload }) {
   const [username, setUsername] = useState('');
   const [sendMsg, setSendMsg] = useState('');
-  const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
-
-  const load = useCallback(async () => {
-    setLoading(true);
-    try {
-      const [fRes, rRes] = await Promise.all([
-        fetch(`${API_BASE}/api/friends`, { credentials: 'include' }),
-        fetch(`${API_BASE}/api/friends/requests`, { credentials: 'include' }),
-      ]);
-      if (fRes.ok) { const d = await fRes.json(); setFriends(d.items || []); }
-      if (rRes.ok) { const d = await rRes.json(); setRequests(d.items || []); }
-    } catch {}
-    finally { setLoading(false); }
-  }, []);
-
-  useEffect(() => { load(); }, [load]);
 
   async function handleSendRequest(e) {
     e.preventDefault();
@@ -124,18 +89,18 @@ function FriendsPanel({ onClose }) {
 
   async function handleAccept(id) {
     await fetch(`${API_BASE}/api/friends/${id}/accept`, { method: 'PUT', credentials: 'include' });
-    load();
+    onReload();
   }
 
   async function handleReject(id) {
     await fetch(`${API_BASE}/api/friends/${id}/reject`, { method: 'PUT', credentials: 'include' });
-    load();
+    onReload();
   }
 
   async function handleRemove(id) {
     if (!confirm('友だちを解除しますか？')) return;
     await fetch(`${API_BASE}/api/friends/${id}`, { method: 'DELETE', credentials: 'include' });
-    load();
+    onReload();
   }
 
   return (
@@ -167,46 +132,40 @@ function FriendsPanel({ onClose }) {
           {sendMsg && <p className="text-xs mt-1.5 text-blue-400">{sendMsg}</p>}
         </div>
 
-        {loading ? (
-          <p className="text-sm text-gray-400">読み込み中…</p>
-        ) : (
-          <>
-            {/* 受信した申請 */}
-            {requests.length > 0 && (
-              <div>
-                <p className="text-xs font-semibold text-gray-400 uppercase mb-2">受信した申請 ({requests.length})</p>
-                <ul className="space-y-2">
-                  {requests.map(r => (
-                    <li key={r.id} className="flex items-center justify-between gap-2 bg-gray-800 rounded-lg px-3 py-2">
-                      <span className="text-sm text-gray-200">{r.fromUsername}</span>
-                      <div className="flex gap-1.5">
-                        <button onClick={() => handleAccept(r.id)} className="px-2 py-1 bg-green-700 hover:bg-green-600 text-white text-xs rounded transition-colors">承認</button>
-                        <button onClick={() => handleReject(r.id)} className="px-2 py-1 bg-gray-700 hover:bg-gray-600 text-gray-300 text-xs rounded transition-colors">拒否</button>
-                      </div>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
-
-            {/* 友だち一覧 */}
-            <div>
-              <p className="text-xs font-semibold text-gray-400 uppercase mb-2">友だち ({friends.length})</p>
-              {friends.length === 0 ? (
-                <p className="text-sm text-gray-500">まだ友だちがいません</p>
-              ) : (
-                <ul className="space-y-2">
-                  {friends.map(f => (
-                    <li key={f.id} className="flex items-center justify-between gap-2 bg-gray-800 rounded-lg px-3 py-2">
-                      <span className="text-sm text-gray-200">{f.username}</span>
-                      <button onClick={() => handleRemove(f.id)} className="text-xs text-gray-500 hover:text-red-400 transition-colors">解除</button>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </div>
-          </>
+        {/* 受信した申請 */}
+        {requests.length > 0 && (
+          <div>
+            <p className="text-xs font-semibold text-gray-400 uppercase mb-2">受信した申請 ({requests.length})</p>
+            <ul className="space-y-2">
+              {requests.map(r => (
+                <li key={r.id} className="flex items-center justify-between gap-2 bg-gray-800 rounded-lg px-3 py-2">
+                  <span className="text-sm text-gray-200">{r.fromUsername}</span>
+                  <div className="flex gap-1.5">
+                    <button onClick={() => handleAccept(r.id)} className="px-2 py-1 bg-green-700 hover:bg-green-600 text-white text-xs rounded transition-colors">承認</button>
+                    <button onClick={() => handleReject(r.id)} className="px-2 py-1 bg-gray-700 hover:bg-gray-600 text-gray-300 text-xs rounded transition-colors">拒否</button>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </div>
         )}
+
+        {/* 友だち一覧 */}
+        <div>
+          <p className="text-xs font-semibold text-gray-400 uppercase mb-2">友だち ({friends.length})</p>
+          {friends.length === 0 ? (
+            <p className="text-sm text-gray-500">まだ友だちがいません</p>
+          ) : (
+            <ul className="space-y-2">
+              {friends.map(f => (
+                <li key={f.id} className="flex items-center justify-between gap-2 bg-gray-800 rounded-lg px-3 py-2">
+                  <span className="text-sm text-gray-200">{f.username}</span>
+                  <button onClick={() => handleRemove(f.id)} className="text-xs text-gray-500 hover:text-red-400 transition-colors">解除</button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
       </div>
     </div>
   );
@@ -301,14 +260,18 @@ function Drawer({ isOpen, onClose, user, authReady, signOut, toggleTheme, isDark
 }
 
 // ========== 右スライドパネル ==========
-function RightPanel({ type, onClose, user }) {
+function RightPanel({ type, onClose, notifItems, friends, friendRequests, onMarkRead, onReloadFriends }) {
   if (!type) return null;
   return (
     <>
       <div className="fixed inset-0 z-30 bg-black/50" onClick={onClose} />
-      <div className="fixed top-0 right-0 z-40 h-full w-80 bg-gray-900 border-l border-gray-700/60 flex flex-col transition-transform duration-300 ease-in-out">
-        {type === 'notifications' && <NotificationsPanel onClose={onClose} />}
-        {type === 'friends' && <FriendsPanel onClose={onClose} />}
+      <div className="fixed top-0 right-0 z-40 h-full w-80 bg-gray-900 border-l border-gray-700/60 flex flex-col">
+        {type === 'notifications' && (
+          <NotificationsPanel items={notifItems} onClose={onClose} onMarkRead={onMarkRead} />
+        )}
+        {type === 'friends' && (
+          <FriendsPanel friends={friends} requests={friendRequests} onClose={onClose} onReload={onReloadFriends} />
+        )}
       </div>
     </>
   );
@@ -319,29 +282,64 @@ export default function Layout({ children, toggleTheme, isDark }) {
   const { user, authReady, signOut } = useAuth();
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [rightPanel, setRightPanel] = useState(null); // 'notifications' | 'friends' | null
-  const [unreadCount, setUnreadCount] = useState(0);
 
-  // 未読バッジ取得（ログイン時のみ、30秒ごと）
+  // ---- キャッシュ済みデータ ----
+  const [notifItems, setNotifItems]       = useState([]);
+  const [friends, setFriends]             = useState([]);
+  const [friendRequests, setFriendRequests] = useState([]);
+
+  const unreadCount = useMemo(() => notifItems.filter(i => !i.isRead).length, [notifItems]);
+
+  // 通知のみ再取得（30秒ポーリング用）
+  const reloadNotifs = useCallback(async () => {
+    try {
+      const res = await fetch(`${API_BASE}/api/notifications`, { credentials: 'include' });
+      if (res.ok) { const d = await res.json(); setNotifItems(d.items || []); }
+    } catch {}
+  }, []);
+
+  // 友だち＋申請を再取得（承認/拒否/解除後）
+  const reloadFriends = useCallback(async () => {
+    try {
+      const [fRes, rRes] = await Promise.all([
+        fetch(`${API_BASE}/api/friends`, { credentials: 'include' }),
+        fetch(`${API_BASE}/api/friends/requests`, { credentials: 'include' }),
+      ]);
+      if (fRes.ok) { const d = await fRes.json(); setFriends(d.items || []); }
+      if (rRes.ok) { const d = await rRes.json(); setFriendRequests(d.items || []); }
+    } catch {}
+  }, []);
+
+  // ログイン直後に全データを一括取得
   useEffect(() => {
-    if (!user) { setUnreadCount(0); return; }
-    const fetchUnread = async () => {
-      try {
-        const res = await fetch(`${API_BASE}/api/notifications`, { credentials: 'include' });
-        if (res.ok) {
-          const d = await res.json();
-          const count = (d.items || []).filter(i => !i.isRead).length;
-          setUnreadCount(count);
-        }
-      } catch {}
-    };
-    fetchUnread();
-    const timer = setInterval(fetchUnread, 30000);
+    if (!user) {
+      setNotifItems([]); setFriends([]); setFriendRequests([]);
+      return;
+    }
+    // 初回一括取得
+    Promise.all([
+      fetch(`${API_BASE}/api/notifications`, { credentials: 'include' }),
+      fetch(`${API_BASE}/api/friends`, { credentials: 'include' }),
+      fetch(`${API_BASE}/api/friends/requests`, { credentials: 'include' }),
+    ]).then(async ([nRes, fRes, rRes]) => {
+      if (nRes.ok) { const d = await nRes.json(); setNotifItems(d.items || []); }
+      if (fRes.ok) { const d = await fRes.json(); setFriends(d.items || []); }
+      if (rRes.ok) { const d = await rRes.json(); setFriendRequests(d.items || []); }
+    }).catch(() => {});
+
+    // 通知は30秒ごとに更新
+    const timer = setInterval(reloadNotifs, 30000);
     return () => clearInterval(timer);
-  }, [user]);
+  }, [user, reloadNotifs]);
+
+  // 通知パネルを開いたとき → 既読APIを叩いてローカルも既読に
+  const handleMarkRead = useCallback(() => {
+    fetch(`${API_BASE}/api/notifications/read`, { method: 'PUT', credentials: 'include' }).catch(() => {});
+    setNotifItems(prev => prev.map(i => ({ ...i, isRead: true })));
+  }, []);
 
   function openPanel(type) {
     setRightPanel(prev => prev === type ? null : type);
-    if (type === 'notifications') setUnreadCount(0);
   }
 
   return (
@@ -399,7 +397,15 @@ export default function Layout({ children, toggleTheme, isDark }) {
         user={user} authReady={authReady} signOut={signOut}
         toggleTheme={toggleTheme} isDark={isDark} />
 
-      <RightPanel type={rightPanel} onClose={() => setRightPanel(null)} user={user} />
+      <RightPanel
+        type={rightPanel}
+        onClose={() => setRightPanel(null)}
+        notifItems={notifItems}
+        friends={friends}
+        friendRequests={friendRequests}
+        onMarkRead={handleMarkRead}
+        onReloadFriends={reloadFriends}
+      />
 
       <main className="flex-1">{children}</main>
 
