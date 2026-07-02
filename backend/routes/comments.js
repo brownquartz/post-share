@@ -113,6 +113,45 @@ router.post(
       [postId, flags.userId ?? null, name, content]
     );
 
+    // コメント通知を非同期で送信（失敗しても無視）
+    (async () => {
+      try {
+        const commenterId = flags.userId ?? null;
+        const commenterName = name || '匿名';
+        const notifData = JSON.stringify({
+          postId: post.id,
+          postTitle: post.post_id,
+          commenterName,
+        });
+
+        // 通知対象のユーザーIDを収集（重複なし・自分除く）
+        const targets = new Set();
+
+        // 1. 投稿オーナーに通知
+        if (post.owner_user_id && post.owner_user_id !== commenterId) {
+          targets.add(post.owner_user_id);
+        }
+
+        // 2. 同じ投稿にコメントしたユーザーに通知
+        const { rows: prevCommenters } = await pool.query(
+          `SELECT DISTINCT user_id FROM comments
+           WHERE post_id = $1 AND user_id IS NOT NULL AND user_id != $2`,
+          [postId, commenterId ?? 0]
+        );
+        for (const r of prevCommenters) {
+          if (r.user_id !== post.owner_user_id) targets.add(r.user_id);
+        }
+
+        // 通知を一括挿入
+        for (const userId of targets) {
+          await pool.query(
+            `INSERT INTO notifications (user_id, type, data) VALUES ($1, 'comment', $2)`,
+            [userId, notifData]
+          );
+        }
+      } catch {}
+    })();
+
     return res.status(201).json(rows[0]);
   })
 );

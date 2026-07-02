@@ -17,7 +17,8 @@ function NotificationsPanel({ onClose }) {
       const res = await fetch(`${API_BASE}/api/notifications`, { credentials: 'include' });
       if (!res.ok) return;
       const data = await res.json();
-      setItems(data.items || []);
+      // friend系は友だちパネルで管理するため除外
+      setItems((data.items || []).filter(i => i.type === 'comment'));
       // 既読にする
       fetch(`${API_BASE}/api/notifications/read`, { method: 'PUT', credentials: 'include' }).catch(() => {});
     } catch {}
@@ -27,9 +28,7 @@ function NotificationsPanel({ onClose }) {
   useEffect(() => { load(); }, [load]);
 
   const TYPE_LABEL = {
-    friend_request:  '友だち申請が届きました',
-    friend_accepted: '友だち申請が承認されました',
-    comment:         'コメントが届きました',
+    comment: 'コメントが届きました',
   };
 
   return (
@@ -52,11 +51,17 @@ function NotificationsPanel({ onClose }) {
             {items.map(item => (
               <li key={item.id} className={`px-5 py-3 ${!item.isRead ? 'bg-blue-950/30' : ''}`}>
                 <p className="text-sm text-gray-200">{TYPE_LABEL[item.type] || item.type}</p>
-                {item.data?.fromUsername && (
-                  <p className="text-xs text-gray-400 mt-0.5">from: {item.data.fromUsername}</p>
+                {item.data?.commenterName && (
+                  <p className="text-xs text-gray-400 mt-0.5">{item.data.commenterName} さんがコメントしました</p>
                 )}
-                {item.data?.byUsername && (
-                  <p className="text-xs text-gray-400 mt-0.5">by: {item.data.byUsername}</p>
+                {item.data?.postId && (
+                  <Link
+                    href={`/posts/${item.data.postId}?aid=${encodeURIComponent(item.data.postTitle || '')}`}
+                    onClick={onClose}
+                    className="text-xs text-blue-400 hover:underline mt-0.5 block"
+                  >
+                    投稿を見る →
+                  </Link>
                 )}
                 <p className="text-xs text-gray-600 mt-1">{new Date(item.createdAt).toLocaleString('ja-JP')}</p>
               </li>
@@ -149,7 +154,7 @@ function FriendsPanel({ onClose }) {
               onChange={e => { setUsername(e.target.value); setSendMsg(''); }}
             />
             <button type="submit" disabled={busy} className="px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm rounded-lg disabled:opacity-60 transition-colors">
-              送る
+              申請する
             </button>
           </form>
           {sendMsg && <p className="text-xs mt-1.5 text-blue-400">{sendMsg}</p>}
@@ -315,7 +320,11 @@ export default function Layout({ children, toggleTheme, isDark }) {
     const fetchUnread = async () => {
       try {
         const res = await fetch(`${API_BASE}/api/notifications`, { credentials: 'include' });
-        if (res.ok) { const d = await res.json(); setUnreadCount(d.unreadCount || 0); }
+        if (res.ok) {
+          const d = await res.json();
+          const count = (d.items || []).filter(i => i.type === 'comment' && !i.isRead).length;
+          setUnreadCount(count);
+        }
       } catch {}
     };
     fetchUnread();
