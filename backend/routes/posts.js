@@ -15,11 +15,45 @@ const {
   canCommentCreate, canCommentModerate,
 } = require("../utils/policy");
 
-// 一覧：postId で絞込み（password は任意）
+// 一覧：キーワード検索（q） または postId で絞込み（password は任意）
 router.get(
   "/",
-  beforeProcess(requireQueryFields(["postId"])),
   queryCatch("GET /api/posts", async (req, res) => {
+    const q = req.query.q ? String(req.query.q).trim() : null;
+
+    // キーワード検索モード
+    if (q && !req.query.postId) {
+      const { rows } = await pool.query(
+        `SELECT id, title, content, post_id, post_password_hash,
+                owner_user_id, view_policy, edit_policy, delete_policy,
+                comment_create_policy, comment_moderate_policy,
+                created_at AS "createdAt", expires_at AS "expiresAt"
+           FROM posts
+          WHERE view_policy = 'public_open'
+            AND (title ILIKE $1 OR post_id ILIKE $1)
+            AND (expires_at IS NULL OR expires_at > NOW())
+          ORDER BY created_at DESC
+          LIMIT 30`,
+        [`%${q}%`]
+      );
+      return res.json(rows.map(r => ({
+        id: r.id,
+        title: r.title,
+        content: r.content,
+        postId: r.post_id,
+        createdAt: r.createdAt,
+        expiresAt: r.expiresAt,
+        editPolicy: r.edit_policy,
+        viewPolicy: r.view_policy,
+        ownerUserId: r.owner_user_id,
+      })));
+    }
+
+    // postId モード（既存の動作）
+    if (!req.query.postId) {
+      return res.status(400).json({ status: "error", message: "postId or q is required" });
+    }
+
     const postId = String(req.query.postId || "").trim();
     const password  = req.query.postpassword || req.query.password || "";
 

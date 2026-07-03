@@ -7,17 +7,21 @@ function requireAuth(req, res, next) {
   next();
 }
 
-// お知らせ一覧（未読数つき）
+// お知らせ一覧（未読数つき、ページング対応）
 router.get('/', requireAuth, async (req, res) => {
   try {
+    const offset = Math.max(0, parseInt(req.query.offset) || 0);
+    const limit = 20;
     const { rows } = await db.query(
       `SELECT id, type, data, is_read AS "isRead", created_at AS "createdAt"
        FROM notifications WHERE user_id = $1
-       ORDER BY created_at DESC LIMIT 50`,
-      [req.user.id]
+       ORDER BY created_at DESC LIMIT $2 OFFSET $3`,
+      [req.user.id, limit + 1, offset]
     );
-    const unreadCount = rows.filter(r => !r.isRead).length;
-    res.json({ items: rows, unreadCount });
+    const hasMore = rows.length > limit;
+    const items = rows.slice(0, limit);
+    const unreadCount = items.filter(r => !r.isRead).length;
+    res.json({ items, unreadCount, hasMore });
   } catch (e) {
     console.error('[GET /api/notifications]', e);
     res.status(500).json({ message: 'サーバーエラー' });

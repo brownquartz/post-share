@@ -27,6 +27,17 @@ export default function FriendsFeedPage() {
       .finally(() => setLoading(false));
   }, [authReady, user]);
 
+  async function refresh() {
+    setLoading(true); setError(''); setItems([]); setHasMore(false);
+    try {
+      const res = await fetch(`${API_BASE}/api/friends/feed`, { credentials: 'include' });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const d = await res.json();
+      setItems(d.items || []); setHasMore(d.hasMore || false);
+    } catch (e) { setError(e.message); }
+    finally { setLoading(false); }
+  }
+
   async function loadMore() {
     setLoadingMore(true);
     try {
@@ -52,7 +63,12 @@ export default function FriendsFeedPage() {
     <>
     <Head><title>友だちの投稿 | Post Share</title></Head>
     <main className="page-wrap">
-      <h1 className="page-title">友だちの投稿</h1>
+      <div className="flex items-center justify-between mb-6">
+        <h1 className="text-2xl font-bold text-primary">友だちの投稿</h1>
+        <button type="button" onClick={refresh} disabled={loading} className="btn-ghost btn-sm disabled:opacity-60">
+          更新
+        </button>
+      </div>
 
       {loading ? (
         <p className="text-secondary text-sm">読み込み中…</p>

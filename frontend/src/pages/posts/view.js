@@ -41,6 +41,8 @@ export default function ViewPosts() {
   const [loading, setLoading] = useState(false);
   const [history, setHistory] = useState([]);
   const [showHistory, setShowHistory] = useState(false);
+  const [searchMode, setSearchMode] = useState('id'); // 'id' | 'keyword'
+  const [keyword, setKeyword] = useState('');
 
   useEffect(() => { setHistory(loadHistory()); }, []);
 
@@ -73,8 +75,25 @@ export default function ViewPosts() {
     finally { setLoading(false); }
   }
 
+  async function searchByKeyword(kw) {
+    setError(''); setItems([]); setLoading(true); setShowHistory(false);
+    try {
+      const res = await fetch(`${API_BASE}/api/posts?q=${encodeURIComponent(kw)}`, { credentials: 'include' });
+      if (!res.ok) { setError(`HTTP ${res.status}`); return; }
+      const list = await res.json();
+      if (!Array.isArray(list) || list.length === 0) { setError('投稿が見つかりませんでした'); return; }
+      setItems(list.map(p => ({ ...p, preview: truncate(stripHtml(p.content || ''), 60) })));
+    } catch (err) { setError(err?.message || 'エラーが発生しました'); }
+    finally { setLoading(false); }
+  }
+
   async function handleSearch(e) {
     e?.preventDefault?.();
+    if (searchMode === 'keyword') {
+      if (!keyword.trim()) return;
+      await searchByKeyword(keyword.trim());
+      return;
+    }
     const hashedPw = password.trim() ? sha256Hex(password) : "";
     await searchByPostId(postId, hashedPw);
   }
@@ -104,52 +123,80 @@ export default function ViewPosts() {
     <main className="page-wrap-md">
       <h1 className="page-title">投稿を見る</h1>
 
+      {/* モード切替タブ */}
+      <div className="flex gap-2 mb-6">
+        <button type="button" onClick={() => { setSearchMode('id'); setItems([]); setError(''); }}
+          className={`btn-sm rounded-full px-4 py-1.5 text-sm font-medium border transition-colors ${searchMode === 'id' ? 'bg-brand text-white border-brand' : 'border-gray-300 dark:border-gray-600 text-secondary hover:border-brand hover:text-brand'}`}>
+          IDで検索
+        </button>
+        <button type="button" onClick={() => { setSearchMode('keyword'); setItems([]); setError(''); }}
+          className={`btn-sm rounded-full px-4 py-1.5 text-sm font-medium border transition-colors ${searchMode === 'keyword' ? 'bg-brand text-white border-brand' : 'border-gray-300 dark:border-gray-600 text-secondary hover:border-brand hover:text-brand'}`}>
+          キーワード検索
+        </button>
+      </div>
+
       <form onSubmit={handleSearch} className="card p-5 space-y-4 mb-8">
-        <div>
-          <label className="label">ポストID</label>
-          <div className="relative">
+        {searchMode === 'id' ? (
+          <>
+            <div>
+              <label className="label">ポストID</label>
+              <div className="relative">
+                <input
+                  className="input"
+                  value={postId}
+                  onChange={(e) => { setPostId(e.target.value); setShowHistory(true); }}
+                  onFocus={() => setShowHistory(true)}
+                  onBlur={() => setTimeout(() => setShowHistory(false), 150)}
+                  required
+                />
+                {showHistory && history.length > 0 && (
+                  <ul className="absolute z-10 w-full mt-1 card border border-gray-200 dark:border-gray-700 shadow-lg overflow-hidden">
+                    {history.map(id => (
+                      <li key={id}>
+                        <button
+                          type="button"
+                          onMouseDown={() => handleHistorySelect(id)}
+                          className="w-full text-left px-3 py-2 text-sm text-secondary hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                        >
+                          {id}
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            </div>
+            <div>
+              <label className="label">
+                パスワード <span className="text-muted font-normal text-xs ml-1">（任意）</span>
+              </label>
+              <div className="flex items-center gap-2">
+                <input
+                  className="input"
+                  type={showPw ? "text" : "password"}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="パスワードなしの場合は空白でOK"
+                />
+                <label className="text-xs text-secondary flex items-center gap-1 whitespace-nowrap cursor-pointer">
+                  <input type="checkbox" checked={showPw} onChange={(e) => setShowPw(e.target.checked)} /> 表示
+                </label>
+              </div>
+            </div>
+          </>
+        ) : (
+          <div>
+            <label className="label">キーワード</label>
             <input
               className="input"
-              value={postId}
-              onChange={(e) => { setPostId(e.target.value); setShowHistory(true); }}
-              onFocus={() => setShowHistory(true)}
-              onBlur={() => setTimeout(() => setShowHistory(false), 150)}
+              value={keyword}
+              onChange={e => setKeyword(e.target.value)}
+              placeholder="タイトルやポストIDで検索…"
               required
             />
-            {showHistory && history.length > 0 && (
-              <ul className="absolute z-10 w-full mt-1 card border border-gray-200 dark:border-gray-700 shadow-lg overflow-hidden">
-                {history.map(id => (
-                  <li key={id}>
-                    <button
-                      type="button"
-                      onMouseDown={() => handleHistorySelect(id)}
-                      className="w-full text-left px-3 py-2 text-sm text-secondary hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
-                    >
-                      {id}
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            )}
+            <p className="text-xs text-muted mt-1">全員に公開の投稿のみ検索できます</p>
           </div>
-        </div>
-        <div>
-          <label className="label">
-            パスワード <span className="text-muted font-normal text-xs ml-1">（任意）</span>
-          </label>
-          <div className="flex items-center gap-2">
-            <input
-              className="input"
-              type={showPw ? "text" : "password"}
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="パスワードなしの場合は空白でOK"
-            />
-            <label className="text-xs text-secondary flex items-center gap-1 whitespace-nowrap cursor-pointer">
-              <input type="checkbox" checked={showPw} onChange={(e) => setShowPw(e.target.checked)} /> 表示
-            </label>
-          </div>
-        </div>
+        )}
         <button type="submit" disabled={loading} className="btn-primary disabled:opacity-60">
           {loading ? "読み込み中…" : "検索"}
         </button>
@@ -164,12 +211,13 @@ export default function ViewPosts() {
       <ul className="space-y-3">
         {items.map((p) => {
           const policy = POLICY_LABEL[p.viewPolicy];
+          const aidParam = searchMode === 'keyword' ? (p.postId || '') : postId;
           return (
             <li key={p.id} className="card p-4 flex items-start justify-between gap-3">
               <div className="min-w-0">
                 <div className="flex items-center gap-2 flex-wrap mb-1">
                   <Link
-                    href={{ pathname: `/posts/${p.id}`, query: { aid: postId } }}
+                    href={{ pathname: `/posts/${p.id}`, query: { aid: aidParam } }}
                     className="font-semibold text-brand hover:underline"
                   >
                     {p.title || `(タイトルなし #${p.id})`}
@@ -184,10 +232,10 @@ export default function ViewPosts() {
               </div>
               <div className="flex gap-2 shrink-0">
                 {p.canEdit && (
-                  <Link href={`/posts/${p.id}/edit?aid=${encodeURIComponent(postId)}`} className="btn-ghost btn-xs">編集</Link>
+                  <Link href={`/posts/${p.id}/edit?aid=${encodeURIComponent(aidParam)}`} className="btn-ghost btn-xs">編集</Link>
                 )}
                 <Link
-                  href={{ pathname: `/posts/${p.id}`, query: { aid: postId } }}
+                  href={{ pathname: `/posts/${p.id}`, query: { aid: aidParam } }}
                   className="btn-primary btn-xs"
                 >
                   開く

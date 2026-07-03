@@ -122,4 +122,52 @@ router.post("/logout", (_req, res) => {
   return res.json({ status:"ok" });
 });
 
+// PUT /api/auth/password — パスワード変更
+router.put('/password', requireAuth, async (req, res) => {
+  const { currentPassword, newPassword } = req.body || {};
+  if (!currentPassword || !newPassword || newPassword.length < 4) {
+    return res.status(400).json({ message: '入力内容を確認してください（新しいパスワードは4文字以上）' });
+  }
+  try {
+    const { rows } = await pool.query('SELECT password_hash FROM users WHERE id = $1', [req.user.uid]);
+    if (!rows[0]) return res.status(404).json({ message: 'ユーザーが見つかりません' });
+    const ok = await bcrypt.compare(currentPassword, rows[0].password_hash);
+    if (!ok) return res.status(401).json({ message: '現在のパスワードが正しくありません' });
+    const hash = await bcrypt.hash(newPassword, 10);
+    await pool.query('UPDATE users SET password_hash = $1 WHERE id = $2', [hash, req.user.uid]);
+    res.json({ ok: true });
+  } catch (e) {
+    console.error('[PUT /api/auth/password]', e);
+    res.status(500).json({ message: 'サーバーエラー' });
+  }
+});
+
+// PUT /api/auth/username — ユーザー名変更
+router.put('/username', requireAuth, async (req, res) => {
+  const { newUsername, currentPassword } = req.body || {};
+  if (!newUsername || !currentPassword) {
+    return res.status(400).json({ message: 'ユーザー名と現在のパスワードを入力してください' });
+  }
+  if (!/^[a-zA-Z0-9_-]{2,30}$/.test(newUsername)) {
+    return res.status(400).json({ message: 'ユーザー名は2〜30文字の英数字・_・-のみ使用できます' });
+  }
+  try {
+    const { rows } = await pool.query('SELECT password_hash FROM users WHERE id = $1', [req.user.uid]);
+    if (!rows[0]) return res.status(404).json({ message: 'ユーザーが見つかりません' });
+    const ok = await bcrypt.compare(currentPassword, rows[0].password_hash);
+    if (!ok) return res.status(401).json({ message: 'パスワードが正しくありません' });
+    const dup = await pool.query('SELECT 1 FROM users WHERE username = $1 AND id != $2', [newUsername, req.user.uid]);
+    if (dup.rowCount) return res.status(409).json({ message: 'そのユーザー名はすでに使われています' });
+    await pool.query('UPDATE users SET username = $1 WHERE id = $2', [newUsername, req.user.uid]);
+    // 新しいJWTを発行してCookieを更新
+    const token = jwt.sign({ uid: req.user.uid, username: newUsername }, JWT_SECRET, { expiresIn: '7d' });
+    const isProd = process.env.NODE_ENV === 'production';
+    res.cookie('token', token, { httpOnly: true, sameSite: isProd ? 'none' : 'lax', secure: isProd, maxAge: 7*24*60*60*1000, path: '/' });
+    res.json({ ok: true, username: newUsername });
+  } catch (e) {
+    console.error('[PUT /api/auth/username]', e);
+    res.status(500).json({ message: 'サーバーエラー' });
+  }
+});
+
 module.exports = router;

@@ -15,7 +15,7 @@ const TYPE_LABEL = {
 
 // ========== 通知パネル ==========
 // friend_request は友だちパネル側で通知するため除外
-function NotificationsPanel({ items, onClose, onMarkRead, onDelete, onDeleteAll }) {
+function NotificationsPanel({ items, onClose, onMarkRead, onDelete, onDeleteAll, hasMore, onLoadMore }) {
   useEffect(() => { onMarkRead(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const filtered = items.filter(i => i.type !== 'friend_request');
@@ -74,6 +74,13 @@ function NotificationsPanel({ items, onClose, onMarkRead, onDelete, onDeleteAll 
               </li>
             ))}
           </ul>
+        )}
+        {hasMore && (
+          <div className="px-5 py-3 border-t border-gray-800">
+            <button type="button" onClick={onLoadMore} className="text-xs text-blue-400 hover:text-blue-300 transition-colors">
+              もっと見る
+            </button>
+          </div>
         )}
       </div>
     </div>
@@ -198,7 +205,6 @@ function Drawer({ isOpen, onClose, user, authReady, signOut, toggleTheme, isDark
     try {
       const tokens = JSON.parse(localStorage.getItem('feedback:tokens') || '[]');
       if (tokens.length > 0) { setFeedbackToken('yes'); return; }
-      if (localStorage.getItem('feedback:viewToken')) setFeedbackToken('yes');
     } catch {}
   }, []);
 
@@ -213,6 +219,7 @@ function Drawer({ isOpen, onClose, user, authReady, signOut, toggleTheme, isDark
       { href: '/posts/view-all', label: 'My Posts' },
       { href: '/favorites', label: 'お気に入り' },
       { href: '/friends', label: '友だちの投稿' },
+      { href: '/settings', label: '設定' },
     ] : []),
     ...(isAdmin ? [{ href: '/feedback/admin', label: '管理', admin: true }] : []),
   ];
@@ -278,14 +285,14 @@ function Drawer({ isOpen, onClose, user, authReady, signOut, toggleTheme, isDark
 }
 
 // ========== 右スライドパネル ==========
-function RightPanel({ type, onClose, notifItems, friends, friendRequests, onMarkRead, onReloadFriends, onDeleteNotif, onDeleteAllNotifs }) {
+function RightPanel({ type, onClose, notifItems, friends, friendRequests, onMarkRead, onReloadFriends, onDeleteNotif, onDeleteAllNotifs, notifHasMore, onLoadMoreNotifs }) {
   if (!type) return null;
   return (
     <>
       <div className="fixed inset-0 z-30 bg-black/50" onClick={onClose} />
       <div className="fixed top-0 right-0 z-40 h-full w-full sm:w-80 bg-gray-900 border-l border-gray-700/60 flex flex-col">
         {type === 'notifications' && (
-          <NotificationsPanel items={notifItems} onClose={onClose} onMarkRead={onMarkRead} onDelete={onDeleteNotif} onDeleteAll={onDeleteAllNotifs} />
+          <NotificationsPanel items={notifItems} onClose={onClose} onMarkRead={onMarkRead} onDelete={onDeleteNotif} onDeleteAll={onDeleteAllNotifs} hasMore={notifHasMore} onLoadMore={onLoadMoreNotifs} />
         )}
         {type === 'friends' && (
           <FriendsPanel friends={friends} requests={friendRequests} onClose={onClose} onReload={onReloadFriends} />
@@ -303,6 +310,7 @@ export default function Layout({ children, toggleTheme, isDark }) {
 
   // ---- キャッシュ済みデータ ----
   const [notifItems, setNotifItems]       = useState([]);
+  const [notifHasMore, setNotifHasMore]   = useState(false);
   const [friends, setFriends]             = useState([]);
   const [friendRequests, setFriendRequests] = useState([]);
 
@@ -316,7 +324,7 @@ export default function Layout({ children, toggleTheme, isDark }) {
   const reloadNotifs = useCallback(async () => {
     try {
       const res = await fetch(`${API_BASE}/api/notifications`, { credentials: 'include' });
-      if (res.ok) { const d = await res.json(); setNotifItems(d.items || []); }
+      if (res.ok) { const d = await res.json(); setNotifItems(d.items || []); setNotifHasMore(d.hasMore || false); }
     } catch {}
   }, []);
 
@@ -332,10 +340,22 @@ export default function Layout({ children, toggleTheme, isDark }) {
     } catch {}
   }, []);
 
+  // 通知をさらに読み込む（ページング）
+  const loadMoreNotifs = useCallback(async () => {
+    try {
+      const res = await fetch(`${API_BASE}/api/notifications?offset=${notifItems.length}`, { credentials: 'include' });
+      if (res.ok) {
+        const d = await res.json();
+        setNotifItems(prev => [...prev, ...(d.items || [])]);
+        setNotifHasMore(d.hasMore || false);
+      }
+    } catch {}
+  }, [notifItems.length]);
+
   // ログイン直後に全データを一括取得
   useEffect(() => {
     if (!user) {
-      setNotifItems([]); setFriends([]); setFriendRequests([]);
+      setNotifItems([]); setNotifHasMore(false); setFriends([]); setFriendRequests([]);
       return;
     }
     // 初回一括取得
@@ -344,14 +364,16 @@ export default function Layout({ children, toggleTheme, isDark }) {
       fetch(`${API_BASE}/api/friends`, { credentials: 'include' }),
       fetch(`${API_BASE}/api/friends/requests`, { credentials: 'include' }),
     ]).then(async ([nRes, fRes, rRes]) => {
-      if (nRes.ok) { const d = await nRes.json(); setNotifItems(d.items || []); }
+      if (nRes.ok) { const d = await nRes.json(); setNotifItems(d.items || []); setNotifHasMore(d.hasMore || false); }
       if (fRes.ok) { const d = await fRes.json(); setFriends(d.items || []); }
       if (rRes.ok) { const d = await rRes.json(); setFriendRequests(d.items || []); }
     }).catch(() => {});
 
     // 通知は30秒ごとに更新
     const timer = setInterval(reloadNotifs, 30000);
-    return () => clearInterval(timer);
+    const handleFriendsReload = () => reloadFriends();
+    window.addEventListener('friends-reload', handleFriendsReload);
+    return () => { clearInterval(timer); window.removeEventListener('friends-reload', handleFriendsReload); };
   }, [user, reloadNotifs]);
 
   // 通知パネルを開いたとき → 既読APIを叩いてローカルも既読に
@@ -372,7 +394,7 @@ export default function Layout({ children, toggleTheme, isDark }) {
   const handleDeleteAllNotifs = useCallback(async () => {
     try {
       await fetch(`${API_BASE}/api/notifications`, { method: 'DELETE', credentials: 'include' });
-      setNotifItems([]);
+      setNotifItems([]); setNotifHasMore(false);
     } catch {}
   }, []);
 
@@ -450,6 +472,8 @@ export default function Layout({ children, toggleTheme, isDark }) {
         onReloadFriends={reloadFriends}
         onDeleteNotif={handleDeleteNotif}
         onDeleteAllNotifs={handleDeleteAllNotifs}
+        notifHasMore={notifHasMore}
+        onLoadMoreNotifs={loadMoreNotifs}
       />
 
       <main className="flex-1">{children}</main>

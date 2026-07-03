@@ -170,7 +170,7 @@ export default function PostDetail() {
         body: JSON.stringify({ username: ownerUsername }),
       });
       const data = await res.json().catch(() => ({}));
-      if (res.ok) setFriendStatus('pending_sent');
+      if (res.ok) { setFriendStatus('pending_sent'); window.dispatchEvent(new CustomEvent('friends-reload')); }
       else alert(data.message || 'エラーが発生しました');
     } catch { alert('エラーが発生しました'); }
     finally { setFriendReqBusy(false); }
@@ -181,7 +181,7 @@ export default function PostDetail() {
     setFriendReqBusy(true);
     try {
       const res = await fetch(`${API_BASE}/api/friends/${friendshipId}/accept`, { method: 'PUT', credentials: 'include' });
-      if (res.ok) setFriendStatus('accepted');
+      if (res.ok) { setFriendStatus('accepted'); window.dispatchEvent(new CustomEvent('friends-reload')); }
     } catch {}
     finally { setFriendReqBusy(false); }
   }
@@ -191,7 +191,7 @@ export default function PostDetail() {
     setFriendReqBusy(true);
     try {
       const res = await fetch(`${API_BASE}/api/friends/${friendshipId}/reject`, { method: 'PUT', credentials: 'include' });
-      if (res.ok) setFriendStatus('rejected');
+      if (res.ok) { setFriendStatus('rejected'); window.dispatchEvent(new CustomEvent('friends-reload')); }
     } catch {}
     finally { setFriendReqBusy(false); }
   }
