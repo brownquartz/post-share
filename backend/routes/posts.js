@@ -165,7 +165,7 @@ router.get(
       id: p.id,
       title: p.title,
       content: p.content,
-      postId: p.post_id, 
+      postId: p.post_id,
       createdAt: p.createdAt,
       expiresAt: p.expiresAt,
       viewPolicy: p.view_policy,
@@ -174,6 +174,7 @@ router.get(
       canEdit: canEdit(p, flags),
       canDelete: canDelete(p, flags),
       canComment: canCommentCreate(p, flags),
+      canModerateComments: canCommentModerate(p, flags),
     });
   })
 );

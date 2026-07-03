@@ -200,4 +200,42 @@ router.get('/status/:username', requireAuth, async (req, res) => {
   }
 });
 
+// 特定ユーザーの投稿（自分が見られるもの）
+router.get('/user/:username', requireAuth, async (req, res) => {
+  try {
+    const myId = Number(req.user.id);
+    const { rows: users } = await db.query('SELECT id FROM users WHERE username = $1', [req.params.username]);
+    if (users.length === 0) return res.status(404).json({ message: 'ユーザーが見つかりません' });
+    const targetId = Number(users[0].id);
+
+    // 友だち関係を確認
+    const { rows: fRows } = await db.query(
+      `SELECT id FROM friendships
+       WHERE ((from_user_id = $1 AND to_user_id = $2) OR (from_user_id = $2 AND to_user_id = $1))
+         AND status = 'accepted'`,
+      [myId, targetId]
+    );
+    const isFriend = fRows.length > 0;
+
+    const { rows } = await db.query(
+      `SELECT p.id, p.title, p.post_id AS "postId", p.view_policy AS "viewPolicy", p.created_at AS "createdAt"
+       FROM posts p
+       WHERE p.owner_user_id = $1
+         AND (p.expires_at IS NULL OR p.expires_at > NOW())
+         AND (
+           p.view_policy = 'public_open'
+           OR (p.view_policy = 'friends' AND $2)
+           OR (p.owner_user_id = $3)
+         )
+       ORDER BY p.created_at DESC
+       LIMIT 50`,
+      [targetId, isFriend, myId]
+    );
+    res.json({ items: rows, isFriend });
+  } catch (e) {
+    console.error('[GET /api/friends/user/:username]', e);
+    res.status(500).json({ message: 'サーバーエラー' });
+  }
+});
+
 module.exports = router;

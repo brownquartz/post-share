@@ -39,6 +39,17 @@ router.delete('/:id', requireAuth, async (req, res) => {
   }
 });
 
+// 全て削除
+router.delete('/', requireAuth, async (req, res) => {
+  try {
+    await db.query(`DELETE FROM notifications WHERE user_id = $1`, [req.user.id]);
+    res.json({ ok: true });
+  } catch (e) {
+    console.error('[DELETE /api/notifications]', e);
+    res.status(500).json({ message: 'サーバーエラー' });
+  }
+});
+
 // 全て既読にする
 router.put('/read', requireAuth, async (req, res) => {
   try {

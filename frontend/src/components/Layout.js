@@ -15,7 +15,7 @@ const TYPE_LABEL = {
 
 // ========== 通知パネル ==========
 // friend_request は友だちパネル側で通知するため除外
-function NotificationsPanel({ items, onClose, onMarkRead, onDelete }) {
+function NotificationsPanel({ items, onClose, onMarkRead, onDelete, onDeleteAll }) {
   useEffect(() => { onMarkRead(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const filtered = items.filter(i => i.type !== 'friend_request');
@@ -24,11 +24,18 @@ function NotificationsPanel({ items, onClose, onMarkRead, onDelete }) {
     <div className="flex flex-col h-full">
       <div className="flex items-center justify-between px-5 py-4 border-b border-gray-700/60">
         <span className="font-bold text-gray-100 text-base">お知らせ</span>
-        <button type="button" onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-gray-100 hover:bg-gray-800 transition-colors">
-          <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-          </svg>
-        </button>
+        <div className="flex items-center gap-2">
+          {filtered.length > 0 && (
+            <button type="button" onClick={onDeleteAll} className="text-xs text-gray-500 hover:text-gray-300 transition-colors">
+              すべて削除
+            </button>
+          )}
+          <button type="button" onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-gray-100 hover:bg-gray-800 transition-colors">
+            <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
       </div>
       <div className="flex-1 overflow-y-auto py-2">
         {filtered.length === 0 ? (
@@ -169,7 +176,7 @@ function FriendsPanel({ friends, requests, onClose, onReload }) {
             <ul className="space-y-2">
               {friends.map(f => (
                 <li key={f.id} className="flex items-center justify-between gap-2 bg-gray-800 rounded-lg px-3 py-2">
-                  <span className="text-sm text-gray-200">{f.username}</span>
+                  <Link href={`/friends/${encodeURIComponent(f.username)}`} onClick={onClose} className="text-sm text-gray-200 hover:text-brand transition-colors">{f.username}</Link>
                   <button onClick={() => handleRemove(f.id)} className="text-xs text-gray-500 hover:text-red-400 transition-colors">解除</button>
                 </li>
               ))}
@@ -204,6 +211,7 @@ function Drawer({ isOpen, onClose, user, authReady, signOut, toggleTheme, isDark
     ...(feedbackToken ? [{ href: '/feedback/view', label: '応答状況' }] : []),
     ...(user ? [
       { href: '/posts/view-all', label: 'My Posts' },
+      { href: '/favorites', label: 'お気に入り' },
       { href: '/friends', label: '友だちの投稿' },
     ] : []),
     ...(isAdmin ? [{ href: '/feedback/admin', label: '管理', admin: true }] : []),
@@ -270,14 +278,14 @@ function Drawer({ isOpen, onClose, user, authReady, signOut, toggleTheme, isDark
 }
 
 // ========== 右スライドパネル ==========
-function RightPanel({ type, onClose, notifItems, friends, friendRequests, onMarkRead, onReloadFriends, onDeleteNotif }) {
+function RightPanel({ type, onClose, notifItems, friends, friendRequests, onMarkRead, onReloadFriends, onDeleteNotif, onDeleteAllNotifs }) {
   if (!type) return null;
   return (
     <>
       <div className="fixed inset-0 z-30 bg-black/50" onClick={onClose} />
-      <div className="fixed top-0 right-0 z-40 h-full w-80 bg-gray-900 border-l border-gray-700/60 flex flex-col">
+      <div className="fixed top-0 right-0 z-40 h-full w-full sm:w-80 bg-gray-900 border-l border-gray-700/60 flex flex-col">
         {type === 'notifications' && (
-          <NotificationsPanel items={notifItems} onClose={onClose} onMarkRead={onMarkRead} onDelete={onDeleteNotif} />
+          <NotificationsPanel items={notifItems} onClose={onClose} onMarkRead={onMarkRead} onDelete={onDeleteNotif} onDeleteAll={onDeleteAllNotifs} />
         )}
         {type === 'friends' && (
           <FriendsPanel friends={friends} requests={friendRequests} onClose={onClose} onReload={onReloadFriends} />
@@ -360,6 +368,14 @@ export default function Layout({ children, toggleTheme, isDark }) {
     } catch {}
   }, []);
 
+  // 通知を全て削除
+  const handleDeleteAllNotifs = useCallback(async () => {
+    try {
+      await fetch(`${API_BASE}/api/notifications`, { method: 'DELETE', credentials: 'include' });
+      setNotifItems([]);
+    } catch {}
+  }, []);
+
   function openPanel(type) {
     setRightPanel(prev => prev === type ? null : type);
   }
@@ -433,6 +449,7 @@ export default function Layout({ children, toggleTheme, isDark }) {
         onMarkRead={handleMarkRead}
         onReloadFriends={reloadFriends}
         onDeleteNotif={handleDeleteNotif}
+        onDeleteAllNotifs={handleDeleteAllNotifs}
       />
 
       <main className="flex-1">{children}</main>

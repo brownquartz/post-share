@@ -24,7 +24,9 @@ export default function PostDetail() {
   const [canEdit, setCanEdit] = useState(false);
   const [canDelete, setCanDelete] = useState(false);
   const [canComment, setCanComment] = useState(true);
+  const [canModerateComments, setCanModerateComments] = useState(false);
   const [createdAt, setCreatedAt] = useState("");
+  const [expiresAt, setExpiresAt] = useState(null);
   const [deleting, setDeleting] = useState(false);
   const [copied, setCopied] = useState(false);
   const [ownerUsername, setOwnerUsername] = useState("");
@@ -115,7 +117,9 @@ export default function PostDetail() {
         setCanEdit(post.canEdit ?? (isOwner || isAnyoneAuthed));
         setCanDelete(post.canDelete ?? post.canEdit ?? (isOwner || isAnyoneAuthed));
         setCanComment(post.canComment ?? true);
+        setCanModerateComments(post.canModerateComments ?? false);
         if (post.createdAt) setCreatedAt(post.createdAt);
+        if (post.expiresAt) setExpiresAt(post.expiresAt);
         // 投稿者のusernameを保存し友だち状態を取得
         if (post.postId) {
           setOwnerUsername(post.postId);
@@ -213,6 +217,16 @@ export default function PostDetail() {
     finally { setCommentSubmitting(false); }
   }
 
+  async function handleDeleteComment(commentId) {
+    if (!confirm('コメントを削除しますか？')) return;
+    try {
+      const qs = buildAuthQS().toString();
+      const url = `${API_BASE}/api/posts/${id}/comments/${commentId}${qs ? `?${qs}` : ''}`;
+      const res = await fetch(url, { method: 'DELETE', credentials: 'include' });
+      if (res.ok) setComments(prev => prev.filter(c => c.id !== commentId));
+    } catch {}
+  }
+
   return (
     <>
     <Head><title>{title ? `${title} | Post Share` : 'Post Share'}</title></Head>
@@ -297,6 +311,12 @@ export default function PostDetail() {
         {createdAt && (
           <p className="text-xs text-muted mt-1">{new Date(createdAt).toLocaleString('ja-JP')}</p>
         )}
+        {expiresAt && (
+          <p className="text-xs text-muted mt-0.5">
+            有効期限: {new Date(expiresAt).toLocaleString('ja-JP')}
+            {new Date(expiresAt) < new Date() && <span className="text-red-500 ml-1">（期限切れ）</span>}
+          </p>
+        )}
 
         {/* 本文 */}
         {loading && <p className="mt-6 text-secondary text-sm">読み込み中…</p>}
@@ -317,9 +337,14 @@ export default function PostDetail() {
               {comments.length === 0 && <li className="text-secondary text-sm">コメントはまだありません</li>}
               {comments.map((c) => (
                 <li key={c.id} className="border border-gray-200 dark:border-gray-700 rounded-xl p-3">
-                  <div className="flex items-center justify-between">
+                  <div className="flex items-center justify-between gap-2">
                     <span className="text-sm font-medium text-primary">{c.name || "匿名"}</span>
-                    <span className="text-xs text-muted">{c.createdAt ? new Date(c.createdAt).toLocaleString() : ""}</span>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-muted">{c.createdAt ? new Date(c.createdAt).toLocaleString() : ""}</span>
+                      {canModerateComments && (
+                        <button type="button" onClick={() => handleDeleteComment(c.id)} className="text-xs text-gray-400 hover:text-red-400 transition-colors">×</button>
+                      )}
+                    </div>
                   </div>
                   <p className="mt-1 text-secondary text-sm whitespace-pre-wrap">{c.content}</p>
                 </li>
