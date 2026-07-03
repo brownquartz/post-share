@@ -142,8 +142,10 @@ router.delete('/:id', requireAuth, async (req, res) => {
 });
 
 // 友だちの投稿フィード
+const FEED_PAGE_SIZE = 20;
 router.get('/feed', requireAuth, async (req, res) => {
   try {
+    const offset = Math.max(0, parseInt(req.query.offset) || 0);
     const { rows } = await db.query(
       `SELECT p.id, p.title, p.post_id AS "postId", p.view_policy AS "viewPolicy",
               p.created_at AS "createdAt", u.username AS "ownerUsername"
@@ -157,10 +159,11 @@ router.get('/feed', requireAuth, async (req, res) => {
          AND p.view_policy IN ('public_open', 'friends')
          AND (p.expires_at IS NULL OR p.expires_at > NOW())
        ORDER BY p.created_at DESC
-       LIMIT 50`,
-      [req.user.id]
+       LIMIT $2 OFFSET $3`,
+      [req.user.id, FEED_PAGE_SIZE + 1, offset]
     );
-    res.json({ items: rows });
+    const hasMore = rows.length > FEED_PAGE_SIZE;
+    res.json({ items: rows.slice(0, FEED_PAGE_SIZE), hasMore });
   } catch (e) {
     console.error('[GET /api/friends/feed]', e);
     res.status(500).json({ message: 'サーバーエラー' });

@@ -14,16 +14,30 @@ export default function FriendsFeedPage() {
   const { user, authReady } = useAuth();
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [hasMore, setHasMore] = useState(false);
   const [error, setError] = useState('');
 
   useEffect(() => {
     if (!authReady || !user) { setLoading(false); return; }
     fetch(`${API_BASE}/api/friends/feed`, { credentials: 'include' })
       .then(r => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); })
-      .then(d => setItems(d.items || []))
+      .then(d => { setItems(d.items || []); setHasMore(d.hasMore || false); })
       .catch(e => setError(e.message))
       .finally(() => setLoading(false));
   }, [authReady, user]);
+
+  async function loadMore() {
+    setLoadingMore(true);
+    try {
+      const res = await fetch(`${API_BASE}/api/friends/feed?offset=${items.length}`, { credentials: 'include' });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const d = await res.json();
+      setItems(prev => [...prev, ...(d.items || [])]);
+      setHasMore(d.hasMore || false);
+    } catch (e) { setError(e.message); }
+    finally { setLoadingMore(false); }
+  }
 
   if (authReady && !user) {
     return (
@@ -71,11 +85,18 @@ export default function FriendsFeedPage() {
                     )}
                   </div>
                 </div>
-                <p className="text-xs text-muted shrink-0">{new Date(p.createdAt).toLocaleDateString('ja-JP')}</p>
+                <p className="text-xs text-muted shrink-0">{new Date(p.createdAt).toLocaleString('ja-JP')}</p>
               </li>
             );
           })}
         </ul>
+        {hasMore && (
+          <div className="text-center mt-4">
+            <button onClick={loadMore} disabled={loadingMore} className="btn-ghost btn-sm disabled:opacity-60">
+              {loadingMore ? '読み込み中…' : 'もっと見る'}
+            </button>
+          </div>
+        )}
       )}
     </main>
     </>

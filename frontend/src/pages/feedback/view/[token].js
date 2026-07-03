@@ -1,4 +1,5 @@
 // pages/feedback/view/[token].js
+import Head from 'next/head';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/router';
 import { API_BASE } from '../../../lib/apiBase';
@@ -19,19 +20,25 @@ export default function ContactViewPage() {
   useEffect(() => {
     if (!token) return;
     fetch(`${API_BASE}/api/feedback/view/${token}`, { credentials: 'include' })
-      .then(r => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); })
+      .then(async r => {
+        if (r.status === 404) throw new Error('お問い合わせが見つかりませんでした');
+        if (!r.ok) throw new Error(`サーバーエラーが発生しました（${r.status}）`);
+        return r.json();
+      })
       .then(setItem)
-      .catch(e => setError(e.message))
+      .catch(e => setError(e.message || 'ネットワークエラーが発生しました'))
       .finally(() => setLoading(false));
   }, [token]);
 
   if (loading) return <main className="page-wrap"><p className="text-secondary text-sm">読み込み中…</p></main>;
-  if (error)   return <main className="page-wrap"><p className="text-error">見つかりませんでした</p></main>;
+  if (error)   return <main className="page-wrap"><p className="text-error">{error}</p></main>;
   if (!item)   return null;
 
   const statusStyle = STATUS_STYLE[item.status] || STATUS_STYLE['未回答'];
 
   return (
+    <>
+    <Head><title>応答状況 | Post Share</title></Head>
     <main className="max-w-lg mx-auto px-5 py-16 space-y-6">
       <h1 className="text-2xl font-bold text-primary">応答状況</h1>
 
@@ -73,5 +80,6 @@ export default function ContactViewPage() {
         )}
       </div>
     </main>
+    </>
   );
 }

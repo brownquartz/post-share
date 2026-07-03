@@ -119,8 +119,8 @@ router.post(
         const commenterId = flags.userId ?? null;
         const commenterName = name || '匿名';
         const notifData = JSON.stringify({
-          postId: post.id,
-          postTitle: post.post_id,
+          postPkId: post.id,
+          postTextId: post.post_id,
           commenterName,
         });
 

@@ -29,6 +29,7 @@ export default function PostDetail() {
   const [copied, setCopied] = useState(false);
   const [ownerUsername, setOwnerUsername] = useState("");
   const [friendStatus, setFriendStatus] = useState(null); // null | 'self' | 'none' | 'pending_sent' | 'pending_received' | 'accepted'
+  const [friendshipId, setFriendshipId] = useState(null);
   const [friendReqBusy, setFriendReqBusy] = useState(false);
   const [comments, setComments] = useState([]);
   const [commentsLoading, setCommentsLoading] = useState(false);
@@ -121,7 +122,7 @@ export default function PostDetail() {
           if (user) {
             fetch(`${API_BASE}/api/friends/status/${encodeURIComponent(post.postId)}`, { credentials: 'include' })
               .then(r => r.ok ? r.json() : null)
-              .then(d => { if (d) setFriendStatus(d.status); })
+              .then(d => { if (d) { setFriendStatus(d.status); setFriendshipId(d.friendshipId ?? null); } })
               .catch(() => {});
           }
         }
@@ -171,6 +172,26 @@ export default function PostDetail() {
     finally { setFriendReqBusy(false); }
   }
 
+  async function handleFriendAccept() {
+    if (!friendshipId || friendReqBusy) return;
+    setFriendReqBusy(true);
+    try {
+      const res = await fetch(`${API_BASE}/api/friends/${friendshipId}/accept`, { method: 'PUT', credentials: 'include' });
+      if (res.ok) setFriendStatus('accepted');
+    } catch {}
+    finally { setFriendReqBusy(false); }
+  }
+
+  async function handleFriendReject() {
+    if (!friendshipId || friendReqBusy) return;
+    setFriendReqBusy(true);
+    try {
+      const res = await fetch(`${API_BASE}/api/friends/${friendshipId}/reject`, { method: 'PUT', credentials: 'include' });
+      if (res.ok) setFriendStatus('rejected');
+    } catch {}
+    finally { setFriendReqBusy(false); }
+  }
+
   async function handleSubmitComment(e) {
     e.preventDefault?.();
     if (!commentText.trim()) return;
@@ -209,6 +230,9 @@ export default function PostDetail() {
             )}
             {user && friendStatus === 'pending_sent' && (
               <span className="text-xs text-muted shrink-0">申請中</span>
+            )}
+            {user && friendStatus === 'pending_received' && (
+              <span className="text-xs font-semibold text-blue-500 bg-blue-500/10 px-2 py-0.5 rounded-full shrink-0">申請受信中</span>
             )}
           </div>
           {/* 右：ボタン群 */}
@@ -251,6 +275,12 @@ export default function PostDetail() {
               <button type="button" onClick={handleFriendRequest} disabled={friendReqBusy} className="btn-ghost btn-sm disabled:opacity-60">
                 {friendReqBusy ? '送信中…' : '友だち申請'}
               </button>
+            )}
+            {user && friendStatus === 'pending_received' && (
+              <>
+                <button type="button" onClick={handleFriendAccept} disabled={friendReqBusy} className="btn-ghost btn-sm text-green-500 disabled:opacity-60">承認</button>
+                <button type="button" onClick={handleFriendReject} disabled={friendReqBusy} className="btn-ghost btn-sm disabled:opacity-60">拒否</button>
+              </>
             )}
             <button
               type="button"

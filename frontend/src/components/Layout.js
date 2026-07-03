@@ -42,9 +42,9 @@ function NotificationsPanel({ items, onClose, onMarkRead, onDelete }) {
                   {item.type === 'comment' && item.data?.commenterName && (
                     <p className="text-xs text-gray-400 mt-0.5">{item.data.commenterName} さんがコメントしました</p>
                   )}
-                  {item.type === 'comment' && item.data?.postId && (
+                  {item.type === 'comment' && item.data?.postPkId && (
                     <Link
-                      href={`/posts/${item.data.postId}?aid=${encodeURIComponent(item.data.postTitle || '')}`}
+                      href={`/posts/${item.data.postPkId}?aid=${encodeURIComponent(item.data.postTextId || '')}`}
                       onClick={onClose}
                       className="text-xs text-blue-400 hover:underline mt-0.5 block"
                     >
