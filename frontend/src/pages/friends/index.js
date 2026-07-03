@@ -80,39 +80,41 @@ export default function FriendsFeedPage() {
           <p className="text-muted text-xs">投稿ページから友だち申請を送ってみましょう</p>
         </div>
       ) : (
-        <ul className="space-y-3">
-          {items.map(p => {
-            const policy = POLICY_LABEL[p.viewPolicy];
-            return (
-              <li key={p.id} className="card p-4 flex items-center justify-between gap-4">
-                <div className="min-w-0">
-                  <div className="text-xs text-muted mb-1">{p.ownerUsername}</div>
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <Link
-                      href={`/posts/${p.id}?aid=${encodeURIComponent(p.postId)}&from=friends`}
-                      className="font-semibold text-brand hover:underline"
-                    >
-                      {p.title || `(タイトルなし #${p.id})`}
-                    </Link>
-                    {policy && (
-                      <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${policy.cls}`}>
-                        {policy.label}
-                      </span>
-                    )}
+        <>
+          <ul className="space-y-3">
+            {items.map(p => {
+              const policy = POLICY_LABEL[p.viewPolicy];
+              return (
+                <li key={p.id} className="card p-4 flex items-center justify-between gap-4">
+                  <div className="min-w-0">
+                    <div className="text-xs text-muted mb-1">{p.ownerUsername}</div>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <Link
+                        href={`/posts/${p.id}?aid=${encodeURIComponent(p.postId)}&from=friends`}
+                        className="font-semibold text-brand hover:underline"
+                      >
+                        {p.title || `(タイトルなし #${p.id})`}
+                      </Link>
+                      {policy && (
+                        <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${policy.cls}`}>
+                          {policy.label}
+                        </span>
+                      )}
+                    </div>
                   </div>
-                </div>
-                <p className="text-xs text-muted shrink-0">{new Date(p.createdAt).toLocaleString('ja-JP')}</p>
-              </li>
-            );
-          })}
-        </ul>
-        {hasMore && (
-          <div className="text-center mt-4">
-            <button onClick={loadMore} disabled={loadingMore} className="btn-ghost btn-sm disabled:opacity-60">
-              {loadingMore ? '読み込み中…' : 'もっと見る'}
-            </button>
-          </div>
-        )}
+                  <p className="text-xs text-muted shrink-0">{new Date(p.createdAt).toLocaleString('ja-JP')}</p>
+                </li>
+              );
+            })}
+          </ul>
+          {hasMore && (
+            <div className="text-center mt-4">
+              <button onClick={loadMore} disabled={loadingMore} className="btn-ghost btn-sm disabled:opacity-60">
+                {loadingMore ? '読み込み中…' : 'もっと見る'}
+              </button>
+            </div>
+          )}
+        </>
       )}
     </main>
     </>
