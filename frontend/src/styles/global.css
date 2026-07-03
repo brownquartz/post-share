@@ -9,19 +9,28 @@
   --color-brand-700: #10a8d9;
 }
 
+/* ── Space purple dark palette ─────────────────────────────────── */
+/* Used via arbitrary values throughout: [#0d0b1a] etc.             */
+/* dp-bg      #0d0b1a  — main page background (very dark indigo)    */
+/* dp-panel   #0a0814  — header / deepest surface                   */
+/* dp-card    #18142e  — cards, right/left panels                   */
+/* dp-raised  #241d3d  — inputs, list items, hover surfaces         */
+/* dp-border  #352d55  — borders                                    */
+/* dp-border2 #4a3d72  — lighter borders / dividers                 */
+
 @layer utilities {
   /* ── Page & Card ───────────────────────────────── */
   .page-bg {
-    @apply bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-gray-100 min-h-screen;
+    @apply bg-gray-50 dark:bg-[#0d0b1a] text-gray-900 dark:text-gray-100 min-h-screen;
   }
   .card {
-    @apply bg-white dark:bg-gray-900
-           border border-gray-200 dark:border-gray-700/60
+    @apply bg-white dark:bg-[#18142e]
+           border border-gray-200 dark:border-[#352d55]
            rounded-2xl;
   }
   .surface {
-    @apply bg-gray-100 dark:bg-gray-800
-           border border-gray-200 dark:border-gray-700/60
+    @apply bg-gray-100 dark:bg-[#241d3d]
+           border border-gray-200 dark:border-[#352d55]
            rounded-xl;
   }
 
@@ -32,8 +41,8 @@
 
   /* ── Nav ───────────────────────────────────────── */
   .header-bar {
-    @apply bg-gray-900 dark:bg-gray-950
-           border-b border-gray-700/60
+    @apply bg-gray-900 dark:bg-[#0a0814]
+           border-b border-gray-700/60 dark:border-[#352d55]
            text-white;
   }
   .brand-link {
@@ -43,8 +52,8 @@
   /* ── Inputs ────────────────────────────────────── */
   .input {
     @apply w-full rounded-lg border px-3 py-2 text-sm
-           bg-white dark:bg-gray-800
-           border-gray-300 dark:border-gray-600
+           bg-white dark:bg-[#241d3d]
+           border-gray-300 dark:border-[#4a3d72]
            text-gray-900 dark:text-gray-100
            placeholder:text-gray-400 dark:placeholder:text-gray-500
            focus:outline-none focus:ring-2 focus:ring-brand/40
@@ -69,10 +78,10 @@
            transition-colors;
   }
   .btn-secondary {
-    @apply border border-gray-300 dark:border-gray-600
+    @apply border border-gray-300 dark:border-[#4a3d72]
            text-gray-700 dark:text-gray-300
-           hover:bg-gray-100 dark:hover:bg-gray-800
-           active:bg-gray-200 dark:active:bg-gray-700
+           hover:bg-gray-100 dark:hover:bg-[#241d3d]
+           active:bg-gray-200 dark:active:bg-[#2e2550]
            transition-colors;
   }
   .btn-danger {
@@ -83,7 +92,7 @@
   }
   .btn-outline-light {
     @apply border border-gray-600 text-gray-300
-           hover:bg-gray-800 active:bg-gray-700
+           hover:bg-[#241d3d] active:bg-[#2e2550]
            transition-colors;
   }
   .hover-lift {
@@ -93,7 +102,6 @@
   }
 
   /* ── Composite buttons ─────────────────────────── */
-  /* Tailwind v4: cannot @apply custom classes — expand all utilities inline */
   .btn-primary {
     @apply inline-flex items-center justify-center gap-2
            rounded-xl px-4 py-2 text-sm font-semibold
@@ -108,10 +116,10 @@
     @apply inline-flex items-center justify-center gap-2
            rounded-xl px-4 py-2 text-sm font-semibold
            select-none cursor-pointer
-           border border-gray-300 dark:border-gray-600
+           border border-gray-300 dark:border-[#4a3d72]
            text-gray-700 dark:text-gray-300
-           hover:bg-gray-100 dark:hover:bg-gray-800
-           active:bg-gray-200 dark:active:bg-gray-700
+           hover:bg-gray-100 dark:hover:bg-[#241d3d]
+           active:bg-gray-200 dark:active:bg-[#2e2550]
            transition hover:-translate-y-0.5 hover:shadow-md
            active:translate-y-0 active:shadow-sm
            focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/60;
@@ -136,7 +144,7 @@
     @apply inline-flex items-center justify-center
            px-4 py-2 rounded-full border text-sm font-medium
            cursor-pointer select-none transition-colors
-           border-gray-300 dark:border-gray-600
+           border-gray-300 dark:border-[#4a3d72]
            text-gray-600 dark:text-gray-400
            hover:border-brand hover:text-brand;
   }
@@ -144,13 +152,13 @@
     @apply inline-flex items-center justify-center
            px-4 py-2 rounded-full border text-sm font-medium
            cursor-not-allowed select-none opacity-40
-           border-gray-300 dark:border-gray-600
+           border-gray-300 dark:border-[#4a3d72]
            text-gray-400 dark:text-gray-500;
   }
 
   /* ── Quill wrapper ─────────────────────────────── */
   .quill-wrap {
-    @apply border border-gray-300 dark:border-gray-700 rounded-lg overflow-hidden;
+    @apply border border-gray-300 dark:border-[#4a3d72] rounded-lg overflow-hidden;
   }
 }
 
@@ -170,12 +178,12 @@
 
 /* Dark mode Quill overrides */
 .dark .ql-toolbar {
-  background: #1f2937;
-  border-color: #374151 !important;
+  background: #241d3d;
+  border-color: #352d55 !important;
 }
 .dark .ql-container {
-  background: #111827;
-  border-color: #374151 !important;
+  background: #18142e;
+  border-color: #352d55 !important;
   color: #f3f4f6;
 }
 .dark .ql-editor.ql-blank::before {
