@@ -8,6 +8,43 @@ import { useAuth } from "../../context/AuthContext";
 
 const ReactQuill = dynamic(() => import("react-quill-new"), { ssr: false });
 
+// Quill toolbar with image upload handler (base64 embed)
+const quillModules = {
+  toolbar: {
+    container: [
+      [{ header: [1, 2, 3, false] }],
+      ['bold', 'italic', 'underline', 'strike'],
+      [{ list: 'ordered' }, { list: 'bullet' }],
+      ['link', 'image'],
+      ['clean'],
+    ],
+    handlers: {
+      image() {
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = 'image/*';
+        input.click();
+        input.onchange = () => {
+          const file = input.files?.[0];
+          if (!file) return;
+          if (file.size > 5 * 1024 * 1024) {
+            alert('画像サイズは5MB以下にしてください');
+            return;
+          }
+          const reader = new FileReader();
+          reader.onload = (e) => {
+            const quill = this.quill;
+            const range = quill.getSelection(true);
+            quill.insertEmbed(range.index, 'image', e.target.result);
+            quill.setSelection(range.index + 1);
+          };
+          reader.readAsDataURL(file);
+        };
+      }
+    }
+  }
+};
+
 function sha256Hex(str) {
   return CryptoJS.SHA256(str).toString();
 }
@@ -170,7 +207,7 @@ export default function NewPostPage() {
         <div>
           <label className="label">内容</label>
           <div className="quill-wrap rich-quill">
-            <ReactQuill theme="snow" value={postContent} onChange={setPostContent} />
+            <ReactQuill theme="snow" value={postContent} onChange={setPostContent} modules={quillModules} />
           </div>
         </div>
 

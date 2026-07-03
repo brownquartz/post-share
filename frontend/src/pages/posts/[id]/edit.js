@@ -8,6 +8,42 @@ import { useAuth } from "../../../context/AuthContext";
 
 const ReactQuill = dynamic(() => import("react-quill-new"), { ssr: false });
 
+const quillModules = {
+  toolbar: {
+    container: [
+      [{ header: [1, 2, 3, false] }],
+      ['bold', 'italic', 'underline', 'strike'],
+      [{ list: 'ordered' }, { list: 'bullet' }],
+      ['link', 'image'],
+      ['clean'],
+    ],
+    handlers: {
+      image() {
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = 'image/*';
+        input.click();
+        input.onchange = () => {
+          const file = input.files?.[0];
+          if (!file) return;
+          if (file.size > 5 * 1024 * 1024) {
+            alert('画像サイズは5MB以下にしてください');
+            return;
+          }
+          const reader = new FileReader();
+          reader.onload = (e) => {
+            const quill = this.quill;
+            const range = quill.getSelection(true);
+            quill.insertEmbed(range.index, 'image', e.target.result);
+            quill.setSelection(range.index + 1);
+          };
+          reader.readAsDataURL(file);
+        };
+      }
+    }
+  }
+};
+
 export default function EditPostPage() {
   const router = useRouter();
   const { user } = useAuth();
@@ -122,7 +158,7 @@ export default function EditPostPage() {
           <div>
             <label className="label">内容</label>
             <div className="quill-wrap rich-quill">
-              <ReactQuill theme="snow" value={html} onChange={setHtml} />
+              <ReactQuill theme="snow" value={html} onChange={setHtml} modules={quillModules} />
             </div>
           </div>
 
