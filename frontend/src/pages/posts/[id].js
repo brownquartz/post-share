@@ -37,6 +37,7 @@ export default function PostDetail() {
   const [commentsLoading, setCommentsLoading] = useState(false);
   const [commentText, setCommentText] = useState("");
   const [commentName, setCommentName] = useState("");
+  const [commentUseMyId, setCommentUseMyId] = useState(false);
   const [commentSubmitting, setCommentSubmitting] = useState(false);
   const [commentError, setCommentError] = useState("");
 
@@ -203,11 +204,12 @@ export default function PostDetail() {
     try {
       const qs = buildAuthQS().toString();
       const url = `${API_BASE}/api/posts/${id}/comments${qs ? `?${qs}` : ""}`;
-      const res = await fetch(url, { method: "POST", credentials: "include", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ content: commentText, name: commentName || undefined }) });
+      const resolvedName = commentUseMyId && user ? user.username : (commentName || undefined);
+      const res = await fetch(url, { method: "POST", credentials: "include", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ content: commentText, name: resolvedName }) });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.message || `Comment failed (${res.status})`);
       setCommentText("");
-      setCommentName("");
+      if (!commentUseMyId) setCommentName("");
       try {
         const res2 = await fetch(`${API_BASE}/api/posts/${id}/comments${qs ? `?${qs}` : ""}`, { credentials: "include" });
         const list = await res2.json().catch(() => []);
@@ -353,10 +355,29 @@ export default function PostDetail() {
           )}
           {canComment && (
             <form onSubmit={handleSubmitComment} className="mt-4 space-y-2">
-              <label className="flex items-center gap-2 text-xs text-secondary">
-                <span>表示名</span>
-                <input className="input !py-1 !px-2 w-32" value={commentName} onChange={(e) => setCommentName(e.target.value)} placeholder="匿名" />
-              </label>
+              <div className="flex items-center gap-3 flex-wrap">
+                <label className="flex items-center gap-2 text-xs text-secondary">
+                  <span>表示名</span>
+                  <input
+                    className="input !py-1 !px-2 w-32 disabled:opacity-50"
+                    value={commentUseMyId && user ? user.username : commentName}
+                    onChange={(e) => setCommentName(e.target.value)}
+                    placeholder="匿名"
+                    disabled={commentUseMyId}
+                  />
+                </label>
+                {user && (
+                  <label className="flex items-center gap-1.5 text-xs text-secondary cursor-pointer select-none">
+                    <input
+                      type="checkbox"
+                      checked={commentUseMyId}
+                      onChange={(e) => setCommentUseMyId(e.target.checked)}
+                      className="w-3.5 h-3.5 accent-brand"
+                    />
+                    自分のIDを使用
+                  </label>
+                )}
+              </div>
               <div className="flex gap-2">
                 <input className="input flex-1" placeholder="コメントを入力…" value={commentText} onChange={(e) => setCommentText(e.target.value)} />
                 <button type="submit" className="btn-primary" disabled={commentSubmitting}>
