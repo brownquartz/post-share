@@ -224,7 +224,7 @@ router.get('/user/:username', requireAuth, async (req, res) => {
          AND (p.expires_at IS NULL OR p.expires_at > NOW())
          AND (
            p.view_policy = 'public_open'
-           OR (p.view_policy = 'friends' AND $2)
+           OR (p.view_policy = 'friends' AND $2::boolean)
            OR (p.owner_user_id = $3)
          )
        ORDER BY p.created_at DESC
