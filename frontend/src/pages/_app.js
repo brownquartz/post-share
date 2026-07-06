@@ -30,6 +30,27 @@ export default function App({ Component, pageProps }) {
       <Head>
         <title>Post Share</title>
         <meta name="description" content="IDで投稿を手軽に共有するサービス" />
+        <meta property="og:type" content="website" />
+        <meta property="og:site_name" content="Post Share" />
+        <meta property="og:title" content="Post Share" />
+        <meta property="og:description" content="IDで投稿を手軽に共有するサービス" />
+        <meta property="og:url" content="https://post-share.brwqz.net/" />
+        <meta name="twitter:card" content="summary" />
+        <meta name="twitter:title" content="Post Share" />
+        <meta name="twitter:description" content="IDで投稿を手軽に共有するサービス" />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "WebApplication",
+            "name": "Post Share",
+            "url": "https://post-share.brwqz.net/",
+            "description": "IDで投稿を手軽に共有するサービス",
+            "applicationCategory": "SocialNetworkingApplication",
+            "inLanguage": "ja",
+            "offers": { "@type": "Offer", "price": "0", "priceCurrency": "JPY" }
+          })}}
+        />
       </Head>
       <Layout toggleTheme={toggleTheme} isDark={isDark}>
         <Component {...pageProps} />
