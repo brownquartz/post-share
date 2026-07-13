@@ -93,7 +93,8 @@ router.post("/login", async (req, res) => {
     }
 
     const token = jwt.sign({ uid: row.id, username: row.username }, JWT_SECRET, { expiresIn: "7d" });
-    const isProd = process.env.NODE_ENV === "production";
+    // FRONTEND_ORIGIN が設定されている = クロスオリジン本番環境
+    const isProd = process.env.NODE_ENV === "production" || !!process.env.FRONTEND_ORIGIN;
     res.cookie(COOKIE_NAME, token, {
       httpOnly: true,
       sameSite: isProd ? "none" : "lax",
@@ -117,7 +118,7 @@ router.get("/me", requireAuth, async (req, res) => {
 
 // POST /api/auth/logout（Cookie 破棄）
 router.post("/logout", (_req, res) => {
-  const isProd = process.env.NODE_ENV === "production";
+  const isProd = process.env.NODE_ENV === "production" || !!process.env.FRONTEND_ORIGIN;
   res.clearCookie(COOKIE_NAME, { sameSite: isProd ? "none" : "lax", secure: isProd, path: "/" });
   return res.json({ status:"ok" });
 });
@@ -161,7 +162,7 @@ router.put('/username', requireAuth, async (req, res) => {
     await pool.query('UPDATE users SET username = $1 WHERE id = $2', [newUsername, req.user.uid]);
     // 新しいJWTを発行してCookieを更新
     const token = jwt.sign({ uid: req.user.uid, username: newUsername }, JWT_SECRET, { expiresIn: '7d' });
-    const isProd = process.env.NODE_ENV === 'production';
+    const isProd = process.env.NODE_ENV === 'production' || !!process.env.FRONTEND_ORIGIN;
     res.cookie('token', token, { httpOnly: true, sameSite: isProd ? 'none' : 'lax', secure: isProd, maxAge: 7*24*60*60*1000, path: '/' });
     res.json({ ok: true, username: newUsername });
   } catch (e) {
