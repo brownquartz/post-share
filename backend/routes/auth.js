@@ -94,7 +94,7 @@ router.post("/login", async (req, res) => {
 
     const token = jwt.sign({ uid: row.id, username: row.username }, JWT_SECRET, { expiresIn: "7d" });
     // FRONTEND_ORIGIN が設定されている = クロスオリジン本番環境
-    const isProd = process.env.NODE_ENV === "production" || !!process.env.FRONTEND_ORIGIN;
+    const isProd = process.env.NODE_ENV !== "development";
     res.cookie(COOKIE_NAME, token, {
       httpOnly: true,
       sameSite: isProd ? "none" : "lax",

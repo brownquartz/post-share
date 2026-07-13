@@ -62,6 +62,13 @@ app.use(attachAuthOptional);
 // --- Health / Test ---
 app.get("/__health", (_req, res) => res.json({ status: "ok" }));
 app.get("/test", (_req, res) => res.status(200).send("OK"));
+app.get("/__cookie", (req, res) => res.json({
+  hasCookie: !!req.cookies?.token,
+  cookieKeys: Object.keys(req.cookies || {}),
+  nodeEnv: process.env.NODE_ENV || "(not set)",
+  hasFrontendOrigin: !!process.env.FRONTEND_ORIGIN,
+  origin: req.get("origin") || "(none)",
+}));
 
 // DB quick check
 app.get("/__db", async (_req, res) => {
