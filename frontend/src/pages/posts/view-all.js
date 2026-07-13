@@ -162,7 +162,7 @@ export default function ViewAllPostsPage() {
     setLoading(true);
     setFetchError('');
     try {
-      const endpoint = nextTab === 'favorites' ? '/api/favorites/mine' : '/api/posts/my?myId=1';
+      const endpoint = nextTab === 'favorites' ? '/api/favorites/mine' : '/api/posts/my';
       const data = await apiCall(endpoint);
       setItems(data.items || []);
     } catch (e) {
