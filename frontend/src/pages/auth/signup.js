@@ -1,6 +1,7 @@
-// pages/auth/signup.js
+﻿// pages/auth/signup.js
 import Head from "next/head";
 import { useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/router";
 import { signupUser } from "../../lib/auth";
 
@@ -50,6 +51,10 @@ export default function SignUp() {
           {loading ? "登録中…" : "登録する"}
         </button>
       </form>
+      <p className="mt-6 text-center text-sm text-secondary">
+        アカウントをお持ちの方は{" "}
+        <Link href="/auth/login" className="text-brand font-medium hover:underline">ログイン</Link>
+      </p>
     </main>
     </>
   );
