@@ -1,7 +1,9 @@
-// backend/server.js
+﻿// backend/server.js
 require("dotenv").config();
 
 const express = require("express");
+const helmet = require("helmet");
+const rateLimit = require("express-rate-limit");
 const cors = require("cors");
 const cookieParser = require("cookie-parser");
 const { attachAuthOptional } = require("./utils/authOptional");
@@ -13,11 +15,45 @@ const favoritesRouter = require('./routes/favorites');
 const feedbackRouter = require('./routes/feedback');
 const friendsRouter = require('./routes/friends');
 const notificationsRouter = require('./routes/notifications');
+const scrapsRouter = require('./routes/scraps');
 
 
 const app = express();
 
+// Railway 等のリバースプロキシ経由なので、X-Forwarded-For を信頼して
+// rate limit が実クライアントIPごとに正しく効くようにする
+app.set("trust proxy", 1);
 
+// --- Security headers ---
+// フロントは別オリジン(GitHub Pages等)から fetch する構成なので、
+// Cross-Origin-Resource-Policy はデフォルトの same-origin のままにすると
+// レスポンスがブロックされる。cross-origin を明示しておく。
+app.use(helmet({
+  crossOriginResourcePolicy: { policy: "cross-origin" },
+}));
+
+// --- Rate limiting ---
+// エラー時も詳細を出さず、常に同じ汎用メッセージだけを返す
+const rateLimitHandler = (_req, res) => {
+  res.status(429).json({ status: "error", message: "Too many requests. Please try again later." });
+};
+
+const apiLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15分
+  max: 300,
+  standardHeaders: true,
+  legacyHeaders: false,
+  handler: rateLimitHandler,
+});
+
+// ログイン・サインアップは総当たり対策で特に厳しめに
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 20,
+  standardHeaders: true,
+  legacyHeaders: false,
+  handler: rateLimitHandler,
+});
 
 // --- Port ---
 const port = process.env.PORT || 4000;
@@ -76,14 +112,9 @@ app.get("/__db", async (_req, res) => {
     await pool.query("SELECT 1");
     res.json({ ok: true });
   } catch (err) {
+    // DBエラーの中身はサーバーログにのみ出し、クライアントには汎用メッセージのみ返す
     console.error("[__db] error:", err);
-    res.status(500).json({
-      ok: false,
-      code: err.code,
-      message: err.message,
-      detail: err.detail,
-      hint: err.hint,
-    });
+    res.status(500).json({ ok: false, message: "Server error" });
   }
 });
 
@@ -97,12 +128,14 @@ app.use((req, _res, next) => {
 });
 
 // --- API Routes ---
-app.use("/api/auth", authRouter);
+app.use("/api", apiLimiter);
+app.use("/api/auth", authLimiter, authRouter);
 app.use("/api/posts", postsRouter);
 app.use('/api/favorites', favoritesRouter);
 app.use('/api/feedback', feedbackRouter);
 app.use('/api/friends', friendsRouter);
 app.use('/api/notifications', notificationsRouter);
+app.use('/api/scraps', scrapsRouter);
 
 // --- 404 for API ---
 app.use("/api/*", (_req, res) =>
