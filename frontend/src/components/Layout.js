@@ -1,4 +1,4 @@
-// src/components/Layout.js
+﻿// src/components/Layout.js
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
@@ -218,6 +218,7 @@ function Drawer({ isOpen, onClose, user, authReady, signOut, toggleTheme, isDark
     ...(user ? [
       { href: '/posts/view-all', label: 'My Posts' },
       { href: '/favorites', label: 'お気に入り' },
+      { href: '/scraps', label: 'スクラップ' },
       { href: '/friends', label: '友だちの投稿' },
       { href: '/settings', label: '設定' },
     ] : []),

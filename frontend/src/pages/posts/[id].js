@@ -1,4 +1,4 @@
-// pages/posts/[id].js
+﻿// pages/posts/[id].js
 import Head from "next/head";
 import { useRouter } from "next/router";
 import { useEffect, useMemo, useState, useCallback } from "react";
@@ -9,6 +9,8 @@ import { API_BASE } from "../../lib/apiBase";
 import { useAuth } from "../../context/AuthContext";
 import FavoriteButton from '../../components/FavoriteButton';
 import { useFavoriteStatus } from '../../hooks/useFavoriteStatus';
+import ScrapButton from '../../components/ScrapButton';
+import { useScrapStatus } from '../../hooks/useScrapStatus';
 import { exportTxt, exportDocx } from '../../lib/exportPost';
 
 export default function PostDetail() {
@@ -43,6 +45,7 @@ export default function PostDetail() {
 
   const postPkId = useMemo(() => (id ? Number(id) : null), [id]);
   const { favorited, setByToggle } = useFavoriteStatus(postPkId);
+  const { scrapped, setByToggle: setScrapByToggle } = useScrapStatus(postPkId);
 
   const [hashedPassword, setHashedPassword] = useState("");
   const [passwordReady, setPasswordReady] = useState(false);
@@ -231,7 +234,21 @@ export default function PostDetail() {
 
   return (
     <>
-    <Head><title>{title ? `${title} | Post Share` : 'Post Share'}</title></Head>
+    <Head>
+      <title>{postViewPolicy === "public_open" && !loading && !error ? `${title} | Post Share` : 'Post Share'}</title>
+      {postViewPolicy === "public_open" && !loading && !error ? (
+        <>
+          <meta name="description" content={content.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim().slice(0, 150)} />
+          <link rel="canonical" href={`https://post-share.brwqz.net/posts/${id}`} />
+          <meta property="og:title" content={`${title} | Post Share`} />
+          <meta property="og:description" content={content.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim().slice(0, 150)} />
+          <meta property="og:url" content={`https://post-share.brwqz.net/posts/${id}`} />
+          <meta property="og:type" content="article" />
+        </>
+      ) : (
+        <meta name="robots" content="noindex" />
+      )}
+    </Head>
     <main className="page-wrap">
 
       {/* ========== 投稿カード ========== */}
@@ -271,6 +288,9 @@ export default function PostDetail() {
             )}
             {user && postPkId ? (
               <FavoriteButton postPkId={postPkId} initialFavorited={favorited} onChanged={setByToggle} />
+            ) : null}
+            {user && postPkId ? (
+              <ScrapButton postPkId={postPkId} postPassword={hashedPassword} initialScrapped={scrapped} onChanged={setScrapByToggle} />
             ) : null}
             {canEdit && (
               <Link href={`/posts/${id}/edit?aid=${encodeURIComponent(postId)}`} className="btn-ghost btn-sm">編集</Link>
